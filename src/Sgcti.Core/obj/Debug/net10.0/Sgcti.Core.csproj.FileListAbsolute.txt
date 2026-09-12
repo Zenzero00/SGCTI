@@ -1,0 +1,11 @@
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\bin\Debug\net10.0\Sgcti.Core.deps.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\bin\Debug\net10.0\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\bin\Debug\net10.0\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.AssemblyInfoInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.AssemblyInfo.cs
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.csproj.CoreCompileInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\refint\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\ref\Sgcti.Core.dll

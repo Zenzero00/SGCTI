@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Sgcti.Api/Sgcti.Api.csproj" />
+    <Project Path="src/Sgcti.Core/Sgcti.Core.csproj" />
+    <Project Path="src/Sgcti.Infrastructure/Sgcti.Infrastructure.csproj" />
+  </Folder>
+</Solution>

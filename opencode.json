@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+    "customProviders": {
+        "omniroute": {
+            "type": "openai",
+            "baseURL": "https://api.cheaperinference.com/v1"
+        }
+    }
+}

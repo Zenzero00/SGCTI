@@ -1,0 +1,17 @@
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.AssemblyInfo.cs
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Infrastructure.deps.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Infrastructure.runtimeconfig.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Infrastructure.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\bin\Debug\net10.0\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.In.595CDCE0.Up2Date
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\refint\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.genruntimeconfig.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\ref\Sgcti.Infrastructure.dll
