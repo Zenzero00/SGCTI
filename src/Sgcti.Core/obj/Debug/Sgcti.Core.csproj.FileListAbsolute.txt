@@ -1,0 +1,12 @@
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.AssemblyInfoInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.AssemblyInfo.cs
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.csproj.CoreCompileInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.sourcelink.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\refint\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\ref\Sgcti.Core.dll

@@ -15,3 +15,4 @@ C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servi
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.pdb
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.genruntimeconfig.cache
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\ref\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.sourcelink.json

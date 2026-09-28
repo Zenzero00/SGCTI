@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Sgcti.Api.Services;
 using Sgcti.Core.Abstractions;
 using Sgcti.Core.Services;
 using Sgcti.Infrastructure.Persistence;
@@ -18,7 +19,10 @@ builder.Services.AddDbContext<SgctiDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("SgctiDB")));
 
 builder.Services.AddScoped<IImpresoraRepositorio, ImpresoraRepositorio>();
+builder.Services.AddScoped<ITicketRepositorio, TicketRepositorio>();
 builder.Services.AddScoped<ServicioAnalisisPredictivo>();
+
+builder.Services.AddHostedService<ServicioMonitoreoRed>();
 
 var app = builder.Build();
 

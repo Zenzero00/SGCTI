@@ -303,16 +303,6 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Categoria")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
-                    b.Property<string>("Departamento")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -320,13 +310,13 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Estado")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("character varying(25)");
-
-                    b.Property<DateTime>("FechaApertura")
-                        .HasColumnType("timestamp with time zone");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Prioridad")
@@ -334,16 +324,19 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("UsuarioSolicitante")
+                    b.Property<int>("SLAHoras")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Titulo")
                         .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Estado");
 
-                    b.HasIndex("FechaApertura");
+                    b.HasIndex("FechaCreacion");
 
                     b.ToTable("Tickets", (string)null);
                 });

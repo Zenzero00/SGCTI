@@ -81,13 +81,12 @@ public class SgctiDbContext : DbContext
         modelBuilder.Entity<Ticket>(entity =>
         {
             entity.ToTable("Tickets");
-            entity.Property(t => t.UsuarioSolicitante).HasMaxLength(120).IsRequired();
-            entity.Property(t => t.Departamento).HasMaxLength(60).IsRequired();
-            entity.Property(t => t.Categoria).HasMaxLength(80).IsRequired();
+            entity.Property(t => t.Titulo).HasMaxLength(200).IsRequired();
             entity.Property(t => t.Descripcion).HasMaxLength(2000).IsRequired();
+            entity.Property(t => t.Estado).HasConversion<string>().HasMaxLength(20);
             entity.Property(t => t.Prioridad).HasConversion<string>().HasMaxLength(20);
-            entity.Property(t => t.Estado).HasConversion<string>().HasMaxLength(25);
-            entity.HasIndex(t => t.FechaApertura);
+            entity.Property(t => t.FechaCreacion).IsRequired();
+            entity.HasIndex(t => t.FechaCreacion);
             entity.HasIndex(t => t.Estado);
         });
 

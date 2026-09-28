@@ -1,0 +1,32 @@
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\appsettings.Development.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\appsettings.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.staticwebassets.endpoints.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.exe
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.csproj.AssemblyReference.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\rpswa.dswa.cache.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.AssemblyInfoInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.AssemblyInfo.cs
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.csproj.CoreCompileInputs.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.sourcelink.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\rjimswa.dswa.cache.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\rjsmrazor.dswa.cache.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\rjsmcshtml.dswa.cache.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\scopedcss\bundle\Sgcti.Api.styles.css
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\staticwebassets.build.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\staticwebassets.build.json.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\staticwebassets.development.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\staticwebassets.build.endpoints.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\swae.build.ex.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.csproj.Up2Date
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\refint\Sgcti.Api.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\Sgcti.Api.genruntimeconfig.cache
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\ref\Sgcti.Api.dll
