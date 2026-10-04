@@ -16,6 +16,10 @@ public class Impresora
 
     public EstadoPing EstadoPing { get; set; } = EstadoPing.Desconectado;
 
+    public int LatenciaMs { get; set; }
+
+    public string ComunidadSnmp { get; set; } = ComunidadSnmpPorDefecto;
+
     public string? ComputadorasVinculadas { get; set; }
 
     public int ContadorTotalPaginas { get; set; }
@@ -57,6 +61,8 @@ public class Impresora
     public ICollection<HistorialConsumo> HistorialConsumo { get; set; } = new List<HistorialConsumo>();
 
     public const string DepartamentoPorDefecto = "Facturación";
+
+    public const string ComunidadSnmpPorDefecto = "public";
 }
 
 public enum EstadoPing

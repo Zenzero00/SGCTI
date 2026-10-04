@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Sgcti.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b51bf7e3cf06d1c608ace831139b2d6be8b7469e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9170eaee0296622b461babee4f8c7f5a19b789a1")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sgcti.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sgcti.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

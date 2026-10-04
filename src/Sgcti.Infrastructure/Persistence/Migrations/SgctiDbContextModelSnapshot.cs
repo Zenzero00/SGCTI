@@ -163,6 +163,10 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("ComunidadSnmp")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int?>("ConsumibleTonerId")
                         .HasColumnType("integer");
 
@@ -209,6 +213,9 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(45)
                         .HasColumnType("character varying(45)");
+
+                    b.Property<int>("LatenciaMs")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Modelo")
                         .IsRequired()

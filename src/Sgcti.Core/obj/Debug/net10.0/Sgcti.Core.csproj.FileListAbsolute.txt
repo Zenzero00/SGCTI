@@ -10,3 +10,15 @@ C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servi
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.pdb
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\ref\Sgcti.Core.dll
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\Debug\net10.0\Sgcti.Core.sourcelink.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\verifybin\Sgcti.Core.deps.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\verifybin\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Core\obj\verifybin\Sgcti.Core.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Core.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Core.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Core.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Core.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Core.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Core.pdb

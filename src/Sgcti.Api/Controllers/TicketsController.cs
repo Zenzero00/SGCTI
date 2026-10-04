@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sgcti.Core.Abstractions;
 using Sgcti.Core.Entities;
@@ -5,6 +6,7 @@ using Sgcti.Core.Entities;
 namespace Sgcti.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class TicketsController : ControllerBase
 {
@@ -46,13 +48,20 @@ public class TicketsController : ControllerBase
             return BadRequest("El identificador del cuerpo no coincide con el de la ruta.");
         }
 
-        var existente = await _ticketRepositorio.ObtenerPorIdAsync(id, ct);
-        if (existente is null)
+        var ticketExistente = await _ticketRepositorio.ObtenerPorIdAsync(id, ct);
+        if (ticketExistente is null)
         {
             return NotFound();
         }
 
-        await _ticketRepositorio.ActualizarAsync(ticket, ct);
+        ticketExistente.Titulo = ticket.Titulo;
+        ticketExistente.Descripcion = ticket.Descripcion;
+        ticketExistente.Estado = ticket.Estado;
+        ticketExistente.Prioridad = ticket.Prioridad;
+        ticketExistente.SLAHoras = ticket.SLAHoras;
+        ticketExistente.FechaCierre = ticket.FechaCierre;
+
+        await _ticketRepositorio.ActualizarAsync(ticketExistente, ct);
         return NoContent();
     }
 

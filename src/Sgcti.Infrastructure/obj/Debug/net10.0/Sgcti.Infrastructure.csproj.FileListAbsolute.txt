@@ -16,3 +16,21 @@ C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servi
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.genruntimeconfig.cache
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\ref\Sgcti.Infrastructure.dll
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\Debug\net10.0\Sgcti.Infrastructure.sourcelink.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Infrastructure.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Infrastructure.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Infrastructure.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Infrastructure.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Infrastructure.deps.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Infrastructure.runtimeconfig.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Infrastructure.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Infrastructure\obj\verifybin\Sgcti.Core.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Infrastructure.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Infrastructure.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Infrastructure.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Infrastructure.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Infrastructure.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Infrastructure.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Infrastructure.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Infrastructure.pdb

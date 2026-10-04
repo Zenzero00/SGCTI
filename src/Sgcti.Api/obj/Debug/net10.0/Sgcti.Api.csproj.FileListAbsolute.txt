@@ -128,3 +128,151 @@ C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servi
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\Debug\net10.0\Sgcti.Api.sourcelink.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.Bcl.Cryptography.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\appsettings.Development.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.staticwebassets.endpoints.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\appsettings.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.exe
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build\Sgcti.Api.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\bin\Debug\net10.0\SharpSnmpLib.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\appsettings.Development.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\appsettings.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Api.staticwebassets.endpoints.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Api.deps.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Api.runtimeconfig.json
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Api.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Api.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Humanizer.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\SharpSnmpLib.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.AspNetCore.OpenApi.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.Bcl.Cryptography.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.Build.Framework.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.CSharp.Workspaces.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.Workspaces.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.ExternalAccess.RazorCompiler.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.CodeAnalysis.Workspaces.MSBuild.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.EntityFrameworkCore.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.EntityFrameworkCore.Design.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.EntityFrameworkCore.Relational.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.Extensions.DependencyModel.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.Logging.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.Protocols.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.IdentityModel.Tokens.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.OpenApi.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Microsoft.VisualStudio.SolutionPersistence.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Mono.TextTemplating.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Newtonsoft.Json.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Npgsql.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.CodeDom.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.Composition.AttributedModel.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.Composition.Convention.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.Composition.Hosting.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.Composition.Runtime.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.Composition.TypedParts.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\cs\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\de\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\es\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\fr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\it\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ja\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ko\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pl\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pt-BR\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ru\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\tr\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hans\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hant\Microsoft.CodeAnalysis.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\de\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\es\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\it\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\de\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\es\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\fr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\it\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ja\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ko\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pl\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pt-BR\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ru\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\tr\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hans\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hant\Microsoft.CodeAnalysis.CSharp.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\cs\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\de\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\es\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\fr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\it\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ja\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ko\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pl\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pt-BR\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ru\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\fr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\it\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ja\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ko\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pl\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\pt-BR\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\ru\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.resources.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Core.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Infrastructure.dll
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Core.pdb
+C:\Users\unda2\Desktop\Sistema de Control de Suministros y Gestión de los Servicios TI\src\Sgcti.Api\obj\verifybin\Sgcti.Infrastructure.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\appsettings.Development.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\appsettings.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.staticwebassets.endpoints.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.exe
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\sgcti-build-check\Sgcti.Api.pdb
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\appsettings.Development.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\appsettings.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Api.staticwebassets.endpoints.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Api.deps.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Api.runtimeconfig.json
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Api.dll
+C:\Users\unda2\AppData\Local\Temp\opencode\verify-bin\Sgcti.Api.pdb
