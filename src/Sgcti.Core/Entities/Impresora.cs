@@ -22,6 +22,8 @@ public class Impresora
 
     public string? ComputadorasVinculadas { get; set; }
 
+    public string? RutaManual { get; set; }
+
     public int ContadorTotalPaginas { get; set; }
 
     public int ContadorMonocromo { get; set; }
@@ -59,6 +61,10 @@ public class Impresora
     public bool AlertaStockCritico { get; set; }
 
     public ICollection<HistorialConsumo> HistorialConsumo { get; set; } = new List<HistorialConsumo>();
+
+    public ICollection<RegistroConsumoDiario> RegistrosConsumoDiario { get; set; } = new List<RegistroConsumoDiario>();
+
+    public ICollection<MantenimientoImpresora> MantenimientosImpresora { get; set; } = new List<MantenimientoImpresora>();
 
     public const string DepartamentoPorDefecto = "Facturación";
 

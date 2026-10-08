@@ -2,8 +2,11 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { toast } from 'vue3-toastify'
 
-const API_URL = 'http://localhost:5141/api/Impresoras'
+const API_BASE = 'http://localhost:5141'
+
+const API_URL = `${API_BASE}/api/Impresoras`
 
 const TOKEN_KEY = 'sgcti_token'
 
@@ -44,6 +47,37 @@ const cargando = ref(true)
 const error = ref('')
 
 const detalle = ref<Fila | null>(null)
+
+interface Mantenimiento {
+  id: number
+  impresoraId: number
+  fecha: string
+  tipo: string
+  descripcion: string
+  realizadoPor: string
+}
+
+const pestañaActiva = ref<'info' | 'mantenimientos'>('info')
+
+const mantenimientos = ref<Mantenimiento[]>([])
+const cargandoMantenimientos = ref(false)
+const guardandoMantenimiento = ref(false)
+const errorMantenimientos = ref('')
+
+const formularioMantenimiento = ref<{ tipo: string; realizadoPor: string; descripcion: string }>({
+  tipo: 'Preventivo',
+  realizadoPor: '',
+  descripcion: '',
+})
+
+const buscandoManuales = ref(false)
+
+const archivoManual = ref<File | null>(null)
+const subiendoManual = ref(false)
+
+const preguntaIA = ref('')
+const respuestaIA = ref('')
+const consultandoIA = ref(false)
 
 function claseDe(texto: string): string {
   return texto
@@ -110,10 +144,20 @@ function formatearFecha(iso: string | undefined): string {
 
 function abrirDetalle(fila: Fila) {
   detalle.value = fila
+  pestañaActiva.value = 'info'
+  mantenimientos.value = []
+  errorMantenimientos.value = ''
+  formularioMantenimiento.value = { tipo: 'Preventivo', realizadoPor: '', descripcion: '' }
+  archivoManual.value = null
+  preguntaIA.value = ''
+  respuestaIA.value = ''
 }
 
 function cerrarDetalle() {
   detalle.value = null
+  archivoManual.value = null
+  preguntaIA.value = ''
+  respuestaIA.value = ''
 }
 
 function alPulsarEscape(evento: KeyboardEvent) {
@@ -166,9 +210,148 @@ async function cargarImpresoras() {
   }
 }
 
+async function buscarManuales(id: number) {
+  buscandoManuales.value = true
+
+  try {
+    const { data } = await axios.get<string>(
+      `${API_BASE}/api/impresoras/${id}/buscar-manuales`,
+      {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+        },
+      },
+    )
+
+    if (data) {
+      window.open(data, '_blank')
+    }
+  } catch (e) {
+    console.error('No se pudo obtener la URL de búsqueda de manuales:', e)
+  } finally {
+    buscandoManuales.value = false
+  }
+}
+
+function seleccionarArchivo(event: Event) {
+  const input = event.target as HTMLInputElement
+  archivoManual.value = input.files?.[0] ?? null
+}
+
+async function subirManual(id: number) {
+  if (!archivoManual.value) {
+    return
+  }
+
+  subiendoManual.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('archivo', archivoManual.value)
+
+    await axios.post(`${API_BASE}/api/impresoras/${id}/subir-manual`, formData, {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+      },
+    })
+
+    toast.success('Manual subido correctamente.')
+    archivoManual.value = null
+  } catch (e) {
+    console.error('No se pudo subir el manual:', e)
+    toast.error('No se pudo subir el manual. Intenta nuevamente.')
+  } finally {
+    subiendoManual.value = false
+  }
+}
+
 function cerrarSesion() {
   localStorage.removeItem(TOKEN_KEY)
   router.push('/')
+}
+
+async function consultarAsistente(id: number) {
+  consultandoIA.value = true
+  respuestaIA.value = ''
+
+  try {
+    const { data } = await axios.post<{ respuesta: string }>(
+      `${API_BASE}/api/impresoras/${id}/chat`,
+      { pregunta: preguntaIA.value },
+      {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+        },
+      },
+    )
+
+    respuestaIA.value = data.respuesta
+  } catch (e) {
+    console.error('No se pudo consultar al asistente:', e)
+    toast.error('No se pudo consultar al asistente. Intenta nuevamente.')
+  } finally {
+    consultandoIA.value = false
+  }
+}
+
+function cambiarPestaña(pestaña: 'info' | 'mantenimientos') {
+  pestañaActiva.value = pestaña
+
+  if (pestaña === 'mantenimientos' && mantenimientos.value.length === 0 && detalle.value) {
+    cargarMantenimientos(detalle.value.id)
+  }
+}
+
+async function cargarMantenimientos(id: number) {
+  cargandoMantenimientos.value = true
+  errorMantenimientos.value = ''
+
+  try {
+    const { data } = await axios.get<Mantenimiento[]>(
+      `${API_BASE}/api/impresoras/${id}/mantenimientos`,
+      {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+        },
+      },
+    )
+
+    mantenimientos.value = data
+  } catch (e) {
+    console.error('No se pudieron cargar los mantenimientos:', e)
+    errorMantenimientos.value = 'No se pudieron cargar los mantenimientos.'
+  } finally {
+    cargandoMantenimientos.value = false
+  }
+}
+
+async function guardarMantenimiento(id: number) {
+  if (!formularioMantenimiento.value.descripcion.trim() || !formularioMantenimiento.value.realizadoPor.trim()) {
+    return
+  }
+
+  guardandoMantenimiento.value = true
+
+  try {
+    await axios.post(
+      `${API_BASE}/api/impresoras/${id}/mantenimientos`,
+      formularioMantenimiento.value,
+      {
+        headers: {
+          Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+        },
+      },
+    )
+
+    formularioMantenimiento.value = { tipo: 'Preventivo', realizadoPor: '', descripcion: '' }
+    await cargarMantenimientos(id)
+    toast.success('Mantenimiento guardado correctamente.')
+  } catch (e) {
+    console.error('No se pudo guardar el mantenimiento:', e)
+    toast.error('No se pudo guardar el mantenimiento. Intenta nuevamente.')
+  } finally {
+    guardandoMantenimiento.value = false
+  }
 }
 
 onMounted(() => {
@@ -184,8 +367,10 @@ onBeforeUnmount(() => {
 <template>
   <div class="vista">
     <header class="vista__encabezado">
-      <h1 class="vista__titulo">Impresoras</h1>
-      <p class="vista__subtitulo">Control de equipos y consumibles de impresión</p>
+      <div>
+        <h1 class="vista__titulo">Impresoras</h1>
+        <p class="vista__subtitulo">Control de equipos y consumibles de impresión</p>
+      </div>
     </header>
 
     <section class="tarjeta">
@@ -255,26 +440,168 @@ onBeforeUnmount(() => {
           </button>
         </header>
 
-        <dl class="modal__lista">
-          <div class="modal__dato">
-            <dt class="modal__etiqueta">Fabricante</dt>
-            <dd class="modal__valor">{{ detalle.fabricante }}</dd>
+        <div class="modal__pestanas" role="tablist">
+          <button
+            class="modal__pestana"
+            type="button"
+            :class="{ 'modal__pestana--activa': pestañaActiva === 'info' }"
+            @click="cambiarPestaña('info')"
+          >
+            Info General
+          </button>
+          <button
+            class="modal__pestana"
+            type="button"
+            :class="{ 'modal__pestana--activa': pestañaActiva === 'mantenimientos' }"
+            @click="cambiarPestaña('mantenimientos')"
+          >
+            Mantenimientos
+          </button>
+        </div>
+
+        <div v-if="pestañaActiva === 'info'">
+          <dl class="modal__lista">
+            <div class="modal__dato">
+              <dt class="modal__etiqueta">Fabricante</dt>
+              <dd class="modal__valor">{{ detalle.fabricante }}</dd>
+            </div>
+            <div class="modal__dato">
+              <dt class="modal__etiqueta">Contador Total de Páginas</dt>
+              <dd class="modal__valor modal__valor--numero">
+                {{ detalle.contadorTotalPaginas.toLocaleString('es-MX') }}
+              </dd>
+            </div>
+            <div class="modal__dato">
+              <dt class="modal__etiqueta">Días Estimados Agotamiento</dt>
+              <dd class="modal__valor modal__valor--numero">{{ detalle.diasEstimadosAgotamientoTonner }}</dd>
+            </div>
+            <div class="modal__dato">
+              <dt class="modal__etiqueta">Fecha Instalación</dt>
+              <dd class="modal__valor">{{ detalle.fechaInstalacion }}</dd>
+            </div>
+          </dl>
+
+          <div style="padding: 0 20px 8px">
+            <button
+              class="boton boton--secundario"
+              type="button"
+              :disabled="buscandoManuales"
+              @click="buscarManuales(detalle.id)"
+            >
+              {{ buscandoManuales ? 'Buscando...' : 'Buscar Manuales en la Web' }}
+            </button>
+
+            <p>
+              <input type="file" accept=".pdf" @change="seleccionarArchivo" />
+            </p>
+
+            <button
+              class="boton boton--primario"
+              type="button"
+              :disabled="!archivoManual || subiendoManual"
+              @click="subirManual(detalle.id)"
+            >
+              {{ subiendoManual ? 'Subiendo...' : 'Subir Manual' }}
+            </button>
+
+            <hr />
+
+            <h4>Asistente IA</h4>
+
+            <textarea
+              v-model="preguntaIA"
+              placeholder="Describe el problema del equipo..."
+            ></textarea>
+
+            <p>
+              <button
+                class="boton boton--primario"
+                type="button"
+                :disabled="!preguntaIA || consultandoIA"
+                @click="consultarAsistente(detalle.id)"
+              >
+                Preguntar
+              </button>
+            </p>
+
+            <p v-if="consultandoIA">Analizando manual...</p>
+
+            <div v-if="respuestaIA">
+              <strong>Respuesta:</strong>
+              <p>{{ respuestaIA }}</p>
+            </div>
           </div>
-          <div class="modal__dato">
-            <dt class="modal__etiqueta">Contador Total de Páginas</dt>
-            <dd class="modal__valor modal__valor--numero">
-              {{ detalle.contadorTotalPaginas.toLocaleString('es-MX') }}
-            </dd>
+        </div>
+
+        <div v-else style="padding: 0 20px 8px">
+          <h4 class="mantenimiento__titulo">Registrar mantenimiento</h4>
+
+          <div class="mantenimiento__formulario">
+            <select v-model="formularioMantenimiento.tipo" class="campo campo--tipo">
+              <option value="Preventivo">Preventivo</option>
+              <option value="Correctivo">Correctivo</option>
+            </select>
+
+            <input
+              v-model="formularioMantenimiento.realizadoPor"
+              class="campo"
+              type="text"
+              placeholder="Técnico"
+            />
+
+            <textarea
+              v-model="formularioMantenimiento.descripcion"
+              class="campo campo--area"
+              placeholder="Descripción del mantenimiento..."
+            ></textarea>
+
+            <button
+              class="boton boton--primario"
+              type="button"
+              :disabled="
+                guardandoMantenimiento ||
+                !formularioMantenimiento.realizadoPor.trim() ||
+                !formularioMantenimiento.descripcion.trim()
+              "
+              @click="guardarMantenimiento(detalle.id)"
+            >
+              {{ guardandoMantenimiento ? 'Guardando...' : 'Guardar Mantenimiento' }}
+            </button>
           </div>
-          <div class="modal__dato">
-            <dt class="modal__etiqueta">Días Estimados Agotamiento</dt>
-            <dd class="modal__valor modal__valor--numero">{{ detalle.diasEstimadosAgotamientoTonner }}</dd>
+
+          <p v-if="errorMantenimientos" class="alerta">{{ errorMantenimientos }}</p>
+
+          <div v-if="cargandoMantenimientos" class="estado-vacio">
+            <p class="estado-vacio__texto">Cargando mantenimientos...</p>
           </div>
-          <div class="modal__dato">
-            <dt class="modal__etiqueta">Fecha Instalación</dt>
-            <dd class="modal__valor">{{ detalle.fechaInstalacion }}</dd>
+
+          <div v-else-if="mantenimientos.length === 0" class="estado-vacio">
+            <p class="estado-vacio__texto">No hay mantenimientos registrados.</p>
           </div>
-        </dl>
+
+          <table v-else class="tabla mantenimiento__tabla">
+            <thead>
+              <tr>
+                <th class="tabla__th">Fecha</th>
+                <th class="tabla__th">Tipo</th>
+                <th class="tabla__th">Técnico</th>
+                <th class="tabla__th">Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="mantenimiento in mantenimientos" :key="mantenimiento.id" class="tabla__fila">
+                <td class="tabla__td">{{ formatearFecha(mantenimiento.fecha) }}</td>
+                <td class="tabla__td">
+                  <span class="tipo" :class="`tipo--${claseDe(mantenimiento.tipo)}`">
+                    {{ mantenimiento.tipo }}
+                  </span>
+                </td>
+                <td class="tabla__td">{{ mantenimiento.realizadoPor }}</td>
+                <td class="tabla__td">{{ mantenimiento.descripcion }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <footer class="modal__pie">
           <button class="boton boton--primario" type="button" @click="cerrarDetalle">Cerrar</button>
@@ -286,6 +613,10 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .vista__encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
@@ -560,11 +891,108 @@ onBeforeUnmount(() => {
 
 .modal__panel {
   width: 100%;
-  max-width: 440px;
+  max-width: 640px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 20px 40px rgba(16, 24, 40, 0.22);
-  overflow: hidden;
+}
+
+.modal__pestanas {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid #eceff3;
+}
+
+.modal__pestana {
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #667085;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.modal__pestana:hover {
+  color: #1f3a68;
+}
+
+.modal__pestana--activa {
+  color: #1f3a68;
+  border-bottom-color: #1f3a68;
+}
+
+.mantenimiento__titulo {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1f2b;
+}
+
+.mantenimiento__formulario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.campo {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #344054;
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+}
+
+.campo:focus {
+  outline: none;
+  border-color: #84caff;
+  box-shadow: 0 0 0 3px rgba(24, 111, 189, 0.15);
+}
+
+.campo--tipo {
+  grid-column: 1 / 2;
+}
+
+.campo--area {
+  grid-column: 1 / -1;
+  min-height: 72px;
+  resize: vertical;
+}
+
+.mantenimiento__formulario .boton {
+  justify-self: start;
+  align-self: end;
+}
+
+.mantenimiento__tabla {
+  margin-top: 14px;
+}
+
+.tipo {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.tipo--preventivo {
+  color: #067647;
+  background: #ecfdf3;
+}
+
+.tipo--correctivo {
+  color: #b42318;
+  background: #fef3f2;
 }
 
 .modal__cabecera {

@@ -30,8 +30,10 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AnalistaId")
-                        .HasColumnType("integer");
+                    b.Property<string>("AnalistaId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("DescripcionActividad")
                         .IsRequired()
@@ -39,7 +41,6 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(2000)");
 
                     b.Property<string>("EquipoIntervenido")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
@@ -53,7 +54,7 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<DateTime>("HoraFin")
+                    b.Property<DateTime?>("HoraFin")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("HoraInicio")
@@ -247,6 +248,10 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");
 
+                    b.Property<string>("RutaManual")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime?>("UltimoMantenimiento")
                         .HasColumnType("timestamp with time zone");
 
@@ -268,6 +273,44 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.HasIndex("NivelTonnerNegro");
 
                     b.ToTable("Impresoras", (string)null);
+                });
+
+            modelBuilder.Entity("Sgcti.Core.Entities.MantenimientoImpresora", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ImpresoraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RealizadoPor")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.HasIndex("ImpresoraId");
+
+                    b.ToTable("MantenimientosImpresora", (string)null);
                 });
 
             modelBuilder.Entity("Sgcti.Core.Entities.MetricaRed", b =>
@@ -300,6 +343,80 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.HasIndex("FechaHora");
 
                     b.ToTable("MetricasRed", (string)null);
+                });
+
+            modelBuilder.Entity("Sgcti.Core.Entities.RegistroConsumoDiario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Consumo")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Contador")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ImpresoraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Fecha");
+
+                    b.HasIndex("ImpresoraId");
+
+                    b.ToTable("RegistrosConsumoDiario", (string)null);
+                });
+
+            modelBuilder.Entity("Sgcti.Core.Entities.Suministro", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CantidadActual")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Observacion")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("StockMinimo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre");
+
+                    b.HasIndex("Tipo");
+
+                    b.ToTable("Suministros", (string)null);
                 });
 
             modelBuilder.Entity("Sgcti.Core.Entities.Ticket", b =>
@@ -348,6 +465,58 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.ToTable("Tickets", (string)null);
                 });
 
+            modelBuilder.Entity("Sgcti.Core.Entities.Usuario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("NombreCompleto")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Usuarios", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Activo = true,
+                            NombreCompleto = "Administrador del Sistema",
+                            PasswordHash = "admin123",
+                            Rol = "Admin",
+                            Username = "admin"
+                        });
+                });
+
             modelBuilder.Entity("Sgcti.Core.Entities.HistorialConsumo", b =>
                 {
                     b.HasOne("Sgcti.Core.Entities.Consumible", "Consumible")
@@ -377,6 +546,28 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.Navigation("ConsumibleToner");
                 });
 
+            modelBuilder.Entity("Sgcti.Core.Entities.MantenimientoImpresora", b =>
+                {
+                    b.HasOne("Sgcti.Core.Entities.Impresora", "Impresora")
+                        .WithMany("MantenimientosImpresora")
+                        .HasForeignKey("ImpresoraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Impresora");
+                });
+
+            modelBuilder.Entity("Sgcti.Core.Entities.RegistroConsumoDiario", b =>
+                {
+                    b.HasOne("Sgcti.Core.Entities.Impresora", "Impresora")
+                        .WithMany("RegistrosConsumoDiario")
+                        .HasForeignKey("ImpresoraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Impresora");
+                });
+
             modelBuilder.Entity("Sgcti.Core.Entities.Consumible", b =>
                 {
                     b.Navigation("HistorialConsumo");
@@ -385,6 +576,10 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Sgcti.Core.Entities.Impresora", b =>
                 {
                     b.Navigation("HistorialConsumo");
+
+                    b.Navigation("MantenimientosImpresora");
+
+                    b.Navigation("RegistrosConsumoDiario");
                 });
 #pragma warning restore 612, 618
         }

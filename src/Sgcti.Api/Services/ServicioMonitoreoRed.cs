@@ -73,19 +73,22 @@ public class ServicioMonitoreoRed : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            using (var scope = _scopeFactory.CreateScope())
+            try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
-
-                try
+                using (var scope = _scopeFactory.CreateScope())
                 {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
+
                     await MonitorearImpresorasAsync(dbContext, stoppingToken);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception ex)
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                if (!stoppingToken.IsCancellationRequested)
                 {
                     _logger.LogError(ex, "Falló la iteración del monitoreo de impresoras");
                 }
@@ -161,9 +164,12 @@ public class ServicioMonitoreoRed : BackgroundService
 
             if (indiceTonerNegro is null)
             {
-                _logger.LogWarning(
-                    "No se encontró ningún cartucho negro en la rama de consumibles de {DireccionIp}",
-                    impresora.Ip);
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    _logger.LogWarning(
+                        "No se encontró ningún cartucho negro en la rama de consumibles de {DireccionIp}",
+                        impresora.Ip);
+                }
 
                 return;
             }
@@ -189,7 +195,10 @@ public class ServicioMonitoreoRed : BackgroundService
             impresora.LatenciaMs = 0;
             impresora.NivelTonnerNegro = 0;
 
-            _logger.LogWarning(ex, "No se pudo consultar la impresora {DireccionIp} por SNMP", impresora.Ip);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "No se pudo consultar la impresora {DireccionIp} por SNMP", impresora.Ip);
+            }
         }
     }
 
@@ -241,14 +250,23 @@ public class ServicioMonitoreoRed : BackgroundService
 
         var consumibles = new List<Variable>();
 
-        await Messenger.WalkAsync(
-            VersionCode.V2,
-            new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
-            new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
-            new ObjectIdentifier(OidRamaDescripcionConsumibles),
-            consumibles,
-            WalkMode.WithinSubtree,
-            limiteTiempo.Token);
+        try
+        {
+            await Messenger.WalkAsync(
+                VersionCode.V2,
+                new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
+                new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
+                new ObjectIdentifier(OidRamaDescripcionConsumibles),
+                consumibles,
+                WalkMode.WithinSubtree,
+                limiteTiempo.Token);
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "No se pudo consultar la rama de consumibles de {DireccionIp} por SNMP", direccionIp);
+
+            return null;
+        }
 
         var candidatos = new List<(int Indice, string Descripcion)>();
 
@@ -256,10 +274,13 @@ public class ServicioMonitoreoRed : BackgroundService
         {
             var descripcion = consumible.Data?.ToString();
 
-            _logger.LogWarning(
-                "[DEPURACION] Consumible {Oid} -> descripcion: '{Descripcion}'",
-                consumible.Id.ToString(),
-                descripcion);
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(
+                    "[DEPURACION] Consumible {Oid} -> descripcion: '{Descripcion}'",
+                    consumible.Id.ToString(),
+                    descripcion);
+            }
 
             if (string.IsNullOrWhiteSpace(descripcion))
             {
@@ -328,15 +349,24 @@ public class ServicioMonitoreoRed : BackgroundService
         using var limiteTiempo = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         limiteTiempo.CancelAfter(TimeoutSnmp);
 
-        var variables = new List<Variable> { new Variable(new ObjectIdentifier(oid)) };
+        try
+        {
+            var variables = new List<Variable> { new Variable(new ObjectIdentifier(oid)) };
 
-        var respuesta = await Messenger.GetAsync(
-            VersionCode.V2,
-            new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
-            new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
-            variables,
-            limiteTiempo.Token);
+            var respuesta = await Messenger.GetAsync(
+                VersionCode.V2,
+                new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
+                new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
+                variables,
+                limiteTiempo.Token);
 
-        return respuesta.FirstOrDefault()?.Data?.ToString();
+            return respuesta.FirstOrDefault()?.Data?.ToString();
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "No se pudo consultar la impresora {DireccionIp} por SNMP (OID {Oid})", direccionIp, oid);
+
+            return null;
+        }
     }
 }

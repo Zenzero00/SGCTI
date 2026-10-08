@@ -2,15 +2,23 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using QuestPDF.Infrastructure;
+using Sgcti.Api.Hubs;
 using Sgcti.Api.Services;
 using Sgcti.Core.Abstractions;
 using Sgcti.Core.Services;
 using Sgcti.Infrastructure.Persistence;
 using Sgcti.Infrastructure.Repositories;
 
+QuestPDF.Settings.License = LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("No se configuró 'Jwt:Key'.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("No se configuró 'Jwt:Issuer'.");
@@ -37,9 +45,10 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Global", policy => policy
-        .AllowAnyOrigin()
+        .WithOrigins("http://localhost:5173")
         .AllowAnyMethod()
-        .AllowAnyHeader());
+        .AllowAnyHeader()
+        .AllowCredentials());
 });
 
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -47,6 +56,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddOpenApi();
 
@@ -77,7 +88,13 @@ builder.Services.AddScoped<IImpresoraRepositorio, ImpresoraRepositorio>();
 builder.Services.AddScoped<ITicketRepositorio, TicketRepositorio>();
 builder.Services.AddScoped<ServicioAnalisisPredictivo>();
 
+builder.Services.AddTransient<IServicioBuscadorManuales, ServicioBuscadorManuales>();
+
+builder.Services.AddHttpClient<IServicioAsistenteIA, ServicioAsistenteIA>();
+
 builder.Services.AddHostedService<ServicioMonitoreoRed>();
+
+builder.Services.AddHostedService<ServicioAlertasAutomaticas>();
 
 var app = builder.Build();
 
@@ -99,5 +116,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<NotificacionesHub>("/hubs/notificaciones");
 
 app.Run();

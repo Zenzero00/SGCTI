@@ -2,8 +2,10 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios, { type AxiosError } from 'axios'
+import { toast } from 'vue3-toastify'
+import { API_BASE_URL } from '../config'
 
-const API_URL = 'http://localhost:5141/api/Tickets'
+const API_URL = API_BASE_URL + '/api/Tickets'
 
 const TOKEN_KEY = 'sgcti_token'
 
@@ -44,6 +46,7 @@ const error = ref('')
 const formulario = reactive({
   titulo: '',
   descripcion: '',
+  prioridad: 1,
 })
 
 const mostrarFormulario = ref(false)
@@ -142,7 +145,7 @@ async function crearTicket() {
         Titulo: formulario.titulo.trim(),
         Descripcion: formulario.descripcion.trim(),
         Estado: 0,
-        Prioridad: 1,
+        Prioridad: formulario.prioridad,
         SLAHoras: 24,
         FechaCreacion: new Date().toISOString(),
       },
@@ -158,6 +161,7 @@ async function crearTicket() {
     mostrarFormulario.value = false
 
     await cargarTickets()
+    toast.success('Ticket creado correctamente.')
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 401) {
       cerrarSesion()
@@ -192,6 +196,7 @@ async function resolverTicket(fila: Fila) {
     )
 
     await cargarTickets()
+    toast.success('Ticket resuelto correctamente.')
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 401) {
       cerrarSesion()
@@ -245,6 +250,20 @@ onMounted(cargarTickets)
         </div>
 
         <div class="campo">
+          <label class="campo__etiqueta" for="prioridad">Prioridad</label>
+          <select
+            id="prioridad"
+            v-model.number="formulario.prioridad"
+            class="campo__input"
+            :disabled="guardando"
+          >
+            <option :value="0">Baja</option>
+            <option :value="1">Media</option>
+            <option :value="2">Alta</option>
+          </select>
+        </div>
+
+        <div class="campo">
           <label class="campo__etiqueta" for="descripcion">Descripción</label>
           <textarea
             id="descripcion"
@@ -279,7 +298,8 @@ onMounted(cargarTickets)
         <p class="estado-vacio__texto">No hay tickets registrados.</p>
       </div>
 
-      <table v-else class="tabla">
+      <div v-else class="tabla__envoltura">
+        <table class="tabla">
         <thead>
           <tr>
             <th class="tabla__th tabla__th--id">Id</th>
@@ -313,7 +333,8 @@ onMounted(cargarTickets)
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </section>
   </div>
 </template>
@@ -474,6 +495,10 @@ onMounted(cargarTickets)
   margin: 0;
   font-size: 14px;
   color: #6b7280;
+}
+
+.tabla__envoltura {
+  overflow-x: auto;
 }
 
 .tabla {

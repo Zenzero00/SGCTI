@@ -22,6 +22,14 @@ public class SgctiDbContext : DbContext
 
     public DbSet<MetricaRed> MetricasRed => Set<MetricaRed>();
 
+    public DbSet<Suministro> Suministros => Set<Suministro>();
+
+    public DbSet<RegistroConsumoDiario> RegistrosConsumoDiario => Set<RegistroConsumoDiario>();
+
+    public DbSet<MantenimientoImpresora> MantenimientosImpresora => Set<MantenimientoImpresora>();
+
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -36,6 +44,8 @@ public class SgctiDbContext : DbContext
             entity.Property(i => i.Departamento).HasMaxLength(60).IsRequired();
             entity.Property(i => i.EstadoPing).HasConversion<string>().HasMaxLength(20);
             entity.Property(i => i.ComputadorasVinculadas).HasMaxLength(500);
+
+            entity.Property(i => i.RutaManual).HasMaxLength(500);
             entity.Property(i => i.NivelTonnerNegro).HasDefaultValue(0);
             entity.Property(i => i.PromedioPaginasDiario).HasPrecision(10, 2);
             entity.Property(i => i.PromedioTonnerDiario).HasPrecision(10, 2);
@@ -93,10 +103,11 @@ public class SgctiDbContext : DbContext
         modelBuilder.Entity<BitacoraActividad>(entity =>
         {
             entity.ToTable("BitacoraActividades");
+            entity.Property(b => b.AnalistaId).HasMaxLength(50).IsRequired();
             entity.Property(b => b.DescripcionActividad).HasMaxLength(2000).IsRequired();
             entity.Property(b => b.EquipoIntervenido).HasMaxLength(150);
-            entity.Property(b => b.Etiqueta).HasMaxLength(30);
-            entity.Property(b => b.Estado).HasConversion<string>().HasMaxLength(15);
+            entity.Property(b => b.Etiqueta).HasMaxLength(30).IsRequired();
+            entity.Property(b => b.Estado).HasMaxLength(15).IsRequired();
             entity.HasIndex(b => b.Estado);
             entity.HasIndex(b => b.AnalistaId);
         });
@@ -108,6 +119,65 @@ public class SgctiDbContext : DbContext
             entity.Property(m => m.LatenciaMS).HasPrecision(10, 2);
             entity.HasIndex(m => m.FechaHora);
             entity.HasIndex(m => m.DispositivoIP);
+        });
+
+        modelBuilder.Entity<Suministro>(entity =>
+        {
+            entity.ToTable("Suministros");
+            entity.Property(s => s.Nombre).HasMaxLength(150).IsRequired();
+            entity.Property(s => s.Tipo).HasMaxLength(50).IsRequired();
+            entity.Property(s => s.CantidadActual).HasDefaultValue(0);
+            entity.Property(s => s.StockMinimo).HasDefaultValue(0);
+            entity.Property(s => s.Observacion).HasMaxLength(500);
+            entity.HasIndex(s => s.Nombre);
+            entity.HasIndex(s => s.Tipo);
+        });
+
+        modelBuilder.Entity<RegistroConsumoDiario>(entity =>
+        {
+            entity.ToTable("RegistrosConsumoDiario");
+            entity.Property(r => r.Observacion).HasMaxLength(500);
+            entity.HasIndex(r => r.Fecha);
+            entity.HasIndex(r => r.ImpresoraId);
+            entity.HasOne(r => r.Impresora)
+                .WithMany(i => i.RegistrosConsumoDiario)
+                .HasForeignKey(r => r.ImpresoraId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MantenimientoImpresora>(entity =>
+        {
+            entity.ToTable("MantenimientosImpresora");
+            entity.Property(m => m.Tipo).HasMaxLength(20).IsRequired();
+            entity.Property(m => m.Descripcion).HasMaxLength(2000).IsRequired();
+            entity.Property(m => m.RealizadoPor).HasMaxLength(100).IsRequired();
+            entity.HasIndex(m => m.ImpresoraId);
+            entity.HasIndex(m => m.Fecha);
+            entity.HasOne(m => m.Impresora)
+                .WithMany(i => i.MantenimientosImpresora)
+                .HasForeignKey(m => m.ImpresoraId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.ToTable("Usuarios");
+            entity.Property(u => u.NombreCompleto).HasMaxLength(150).IsRequired();
+            entity.Property(u => u.Username).HasMaxLength(50).IsRequired();
+            entity.Property(u => u.PasswordHash).HasMaxLength(200).IsRequired();
+            entity.Property(u => u.Rol).HasMaxLength(20).IsRequired();
+            entity.Property(u => u.Activo).HasDefaultValue(true);
+            entity.HasIndex(u => u.Username).IsUnique();
+
+            entity.HasData(new Usuario
+            {
+                Id = 1,
+                NombreCompleto = "Administrador del Sistema",
+                Username = "admin",
+                PasswordHash = "admin123",
+                Rol = Usuario.RolAdmin,
+                Activo = true
+            });
         });
     }
 }

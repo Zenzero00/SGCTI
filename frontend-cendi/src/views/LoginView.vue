@@ -6,10 +6,14 @@ import axios from 'axios'
 const API_URL = 'http://localhost:5141/api/Auth/login'
 
 const TOKEN_KEY = 'sgcti_token'
+const NOMBRE_USUARIO_KEY = 'nombre_usuario'
+const ROL_USUARIO_KEY = 'rol_usuario'
 
 interface LoginResponse {
   token: string
   expira: string
+  nombreCompleto: string
+  rol: string
 }
 
 const router = useRouter()
@@ -39,6 +43,8 @@ async function iniciarSesion() {
     })
 
     localStorage.setItem(TOKEN_KEY, data.token)
+    localStorage.setItem(NOMBRE_USUARIO_KEY, data.nombreCompleto)
+    localStorage.setItem(ROL_USUARIO_KEY, data.rol)
     await router.push('/panel')
   } catch (e) {
     error.value = mensajeDeError(e)

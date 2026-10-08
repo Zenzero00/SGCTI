@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Sgcti.Api.Hubs;
 using Sgcti.Core.Abstractions;
 using Sgcti.Core.Entities;
 
@@ -12,9 +14,12 @@ public class TicketsController : ControllerBase
 {
     private readonly ITicketRepositorio _ticketRepositorio;
 
-    public TicketsController(ITicketRepositorio ticketRepositorio)
+    private readonly IHubContext<NotificacionesHub> _hubContext;
+
+    public TicketsController(ITicketRepositorio ticketRepositorio, IHubContext<NotificacionesHub> hubContext)
     {
         _ticketRepositorio = ticketRepositorio;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -37,6 +42,13 @@ public class TicketsController : ControllerBase
     public async Task<ActionResult<Ticket>> Create(Ticket ticket, CancellationToken ct)
     {
         var creado = await _ticketRepositorio.AgregarAsync(ticket, ct);
+
+        await _hubContext.Clients.All.SendAsync(
+            "RecibirNotificacion",
+            "Nuevo Ticket",
+            $"Se ha creado un nuevo ticket: {creado.Titulo}",
+            ct);
+
         return CreatedAtAction(nameof(GetById), new { id = creado.Id }, creado);
     }
 
