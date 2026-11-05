@@ -14,6 +14,16 @@ public class Usuario
 
     public bool Activo { get; set; } = true;
 
+    public string? Cargo { get; set; }
+
+    public string? Departamento { get; set; }
+
+    public PrioridadTicket? PrioridadPersonalizada { get; set; }
+
+    public string? TelegramUsuarioOId { get; set; }
+
     public const string RolAdmin = "Admin";
+    public const string RolIngeniero = "Ingeniero";
     public const string RolTecnico = "Tecnico";
+    public const string RolEmpleado = "Empleado";
 }

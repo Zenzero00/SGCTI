@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <PackageReference Include="Telegram.Bot" Version="22.10.3.2" />
     <PackageReference Include="UglyToad.PdfPig" Version="1.7.0-custom-5" />
   </ItemGroup>
 

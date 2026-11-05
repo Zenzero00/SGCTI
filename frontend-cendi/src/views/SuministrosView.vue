@@ -75,7 +75,7 @@ const eliminandoId = ref<number | null>(null)
 const errorAccion = ref('')
 
 function enCritico(suministro: Suministro): boolean {
-  return suministro.cantidadActual <= suministro.stockMinimo
+  return suministro.cantidadActual <= suministro.stockMinimo || suministro.cantidadActual < 3
 }
 
 function mensajeDeError(e: unknown, respaldo: string): string {
@@ -219,7 +219,14 @@ async function guardarSuministro() {
     observacion: formulario.observacion.trim() || null,
   }
 
+  const anterior =
+    modoEdicion.value && editandoId.value !== null
+      ? suministros.value.find((s) => s.id === editandoId.value) ?? null
+      : null
+
   try {
+    let idGuardado = editandoId.value
+
     if (modoEdicion.value && editandoId.value !== null) {
       await axios.put(`${API_URL}/${editandoId.value}`, payload, {
         headers: {
@@ -227,15 +234,30 @@ async function guardarSuministro() {
         },
       })
     } else {
-      await axios.post(API_URL, payload, {
+      const { data } = await axios.post<Suministro>(API_URL, payload, {
         headers: {
           Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
         },
       })
+      idGuardado = data.id
     }
 
     cerrarModal()
     await cargarSuministros()
+
+    const guardado = suministros.value.find((s) => s.id === idGuardado) ?? null
+
+    if (
+      guardado &&
+      enCritico(guardado) &&
+      (!anterior || !enCritico(anterior) || guardado.cantidadActual < anterior.cantidadActual)
+    ) {
+      toast.warning(
+        `¡Stock bajo! ${guardado.nombre} - ${guardado.tipo} · Quedan ${guardado.cantidadActual} unidades (mínimo ${guardado.stockMinimo}).`,
+        { autoClose: 6000 },
+      )
+    }
+
     toast.success('Suministro guardado correctamente.')
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 401) {
@@ -372,7 +394,7 @@ onBeforeUnmount(() => {
               </span>
             </td>
             <td class="tabla__td">
-              <span class="etiqueta">{{ suministro.tipo }}</span>
+              <span class="badge badge--neutral">{{ suministro.tipo }}</span>
             </td>
             <td class="tabla__td" :class="{ 'tabla__td--critico': enCritico(suministro) }">
               <span class="badge" :class="enCritico(suministro) ? 'badge--peligro' : 'badge--normal'">
@@ -404,7 +426,7 @@ onBeforeUnmount(() => {
       </table>
     </section>
 
-    <div v-if="mostrarModal" class="modal" @click.self="cerrarModal">
+    <div v-if="mostrarModal" class="modal">
       <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-suministro-titulo">
         <form @submit.prevent="guardarSuministro">
           <header class="modal__cabecera">
@@ -535,10 +557,10 @@ onBeforeUnmount(() => {
 
 .tarjeta {
   background: #ffffff;
-  border: 1px solid #e2e5ea;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
-  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-top: 20px;
 }
 
 .tarjeta__cabecera {
@@ -546,8 +568,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eceff3;
+  margin-bottom: 20px;
 }
 
 .tarjeta__titulo {
@@ -568,9 +589,7 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #eceff3;
-  background: #f9fafb;
+  margin-bottom: 16px;
 }
 
 .filtros__busqueda {
@@ -645,7 +664,7 @@ onBeforeUnmount(() => {
 }
 
 .alerta {
-  margin: 16px 20px;
+  margin: 16px 0 0;
   padding: 10px 12px;
   font-size: 13px;
   color: #b42318;
@@ -675,15 +694,15 @@ onBeforeUnmount(() => {
 }
 
 .tabla__th {
-  padding: 11px 20px;
-  font-size: 11px;
+  padding: 12px 8px;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.05em;
   text-align: left;
   text-transform: uppercase;
-  color: #475467;
-  background: #f9fafb;
-  border-bottom: 1px solid #e2e5ea;
+  color: #6b7280;
+  background: transparent;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .tabla__th--corta,
@@ -702,10 +721,11 @@ onBeforeUnmount(() => {
 }
 
 .tabla__td {
-  padding: 13px 20px;
+  padding: 16px 8px;
   font-size: 14px;
+  text-align: left;
   color: #344054;
-  border-bottom: 1px solid #f2f4f7;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .tabla__fila:last-child .tabla__td {
@@ -740,39 +760,25 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.etiqueta {
-  display: inline-block;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #344054;
-  background: #f2f4f7;
-  border: 1px solid #e2e5ea;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
 .badge {
   display: inline-block;
-  padding: 3px 10px;
-  font-size: 12px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  border: 1px solid transparent;
   border-radius: 999px;
   white-space: nowrap;
 }
 
+.badge--neutral,
 .badge--normal {
-  color: #344054;
-  background: #f2f4f7;
-  border-color: #e2e5ea;
+  color: #6b7280;
+  background: #f3f4f6;
 }
 
 .badge--peligro {
-  color: #ffffff;
-  background: #f04438;
-  border-color: #f04438;
+  color: #dc2626;
+  background: #fee2e2;
 }
 
 .accion {

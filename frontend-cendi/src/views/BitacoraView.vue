@@ -3,8 +3,10 @@ import { onBeforeUnmount, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { toast } from 'vue3-toastify'
+import { API_BASE_URL } from '../config'
 
-const API_URL = 'http://localhost:5141/api/bitacora'
+const API_URL = `${API_BASE_URL}/api/bitacora`
+const USUARIOS_API_URL = `${API_BASE_URL}/api/usuarios`
 
 const TOKEN_KEY = 'sgcti_token'
 
@@ -21,9 +23,18 @@ interface BitacoraActividad {
   estado: string
 }
 
+interface UsuarioSistema {
+  id: number
+  nombreCompleto: string
+  username: string
+  rol: string
+  activo: boolean
+}
+
 const router = useRouter()
 
 const actividades = ref<BitacoraActividad[]>([])
+const analistasDisponibles = ref<UsuarioSistema[]>([])
 const cargando = ref(true)
 const error = ref('')
 
@@ -34,7 +45,6 @@ const errorFormulario = ref('')
 const completandoId = ref<number | null>(null)
 const errorAccion = ref('')
 
-const RECORRIDO_ANALISTA = 'Técnico'
 const RECORRIDO_DESCRIPCION = 'Recorrido de instalaciones'
 const RECORRIDO_ETIQUETA = 'Rutina'
 
@@ -51,9 +61,33 @@ const formulario = reactive({
   etiqueta: 'Rutina',
 })
 
+function formatearRol(rol: string): string {
+  return rol === 'Tecnico' ? 'Técnico' : rol
+}
+
+function obtenerNombreUsuarioActual(): string {
+  return (localStorage.getItem('nombre_usuario') ?? '').trim()
+}
+
 function cerrarSesion() {
   localStorage.removeItem(TOKEN_KEY)
   router.push('/')
+}
+
+async function cargarAnalistas() {
+  try {
+    const { data } = await axios.get<UsuarioSistema[]>(USUARIOS_API_URL, {
+      headers: {
+        Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY),
+      },
+    })
+
+    analistasDisponibles.value = data.filter((u) => u.activo)
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 401) {
+      cerrarSesion()
+    }
+  }
 }
 
 async function cargarActividades() {
@@ -80,8 +114,18 @@ async function cargarActividades() {
   }
 }
 
-function abrirNuevo() {
-  formulario.analistaId = ''
+async function abrirNuevo() {
+  if (analistasDisponibles.value.length === 0) {
+    await cargarAnalistas()
+  }
+
+  const usuarioActual = obtenerNombreUsuarioActual()
+  const coincidencia = analistasDisponibles.value.find(
+    (u) => u.nombreCompleto.toLowerCase() === usuarioActual.toLowerCase(),
+  )
+
+  formulario.analistaId =
+    coincidencia?.nombreCompleto ?? analistasDisponibles.value[0]?.nombreCompleto ?? usuarioActual
   formulario.descripcionActividad = ''
   formulario.equipoIntervenido = ''
   formulario.etiqueta = 'Rutina'
@@ -105,7 +149,7 @@ function validarFormulario(): string {
   const descripcion = formulario.descripcionActividad.trim()
 
   if (analista.length < 2) {
-    return 'El analista es obligatorio y debe tener al menos 2 caracteres.'
+    return 'Debes seleccionar un analista del sistema.'
   }
 
   if (descripcion.length < 2) {
@@ -241,12 +285,16 @@ function detenerCronometro() {
 
 async function iniciarRecorrido() {
   errorAccion.value = ''
+  const analistaActual =
+    obtenerNombreUsuarioActual() ||
+    analistasDisponibles.value[0]?.nombreCompleto ||
+    'Técnico'
 
   try {
     const { data } = await axios.post<BitacoraActividad>(
       API_URL,
       {
-        analistaId: RECORRIDO_ANALISTA,
+        analistaId: analistaActual,
         descripcionActividad: RECORRIDO_DESCRIPCION,
         equipoIntervenido: null,
         etiqueta: RECORRIDO_ETIQUETA,
@@ -370,6 +418,7 @@ async function registrarSubtareaEnRecorrido(descripcionSubtarea: string) {
 onMounted(() => {
   window.addEventListener('keydown', alPulsarEscape)
   cargarActividades()
+  cargarAnalistas()
 })
 
 onBeforeUnmount(() => {
@@ -385,7 +434,7 @@ onUnmounted(() => {
   <div class="vista">
     <header class="vista__encabezado">
       <h1 class="vista__titulo">Bitácora de Actividades</h1>
-      <p class="vista__subtitulo">Auditoría y tareas diarias de los técnicos</p>
+      <p class="vista__subtitulo">Auditoría y tareas diarias de los ingenieros y técnicos</p>
     </header>
 
     <section class="tarjeta">
@@ -450,18 +499,23 @@ onUnmounted(() => {
           </thead>
           <tbody>
             <tr v-for="actividad in actividades" :key="actividad.id" class="tabla__fila">
-              <td class="tabla__td">{{ actividad.analistaId }}</td>
+              <td class="tabla__td">{{ actividad.analistaId === 'Tecnico' ? 'Técnico' : actividad.analistaId }}</td>
               <td class="tabla__td tabla__td--actividad">{{ actividad.descripcionActividad }}</td>
               <td class="tabla__td">{{ actividad.equipoIntervenido || '—' }}</td>
               <td class="tabla__td">{{ formatearFechaHora(actividad.horaInicio) }}</td>
               <td class="tabla__td">{{ formatearFechaHora(actividad.horaFin) }}</td>
               <td class="tabla__td">
-                <span class="etiqueta">{{ actividad.etiqueta }}</span>
+                <span
+                  class="badge"
+                  :class="`badge--${actividad.etiqueta.toLowerCase().replace(/\s+/g, '-')}`"
+                >
+                  {{ actividad.etiqueta }}
+                </span>
               </td>
               <td class="tabla__td">
                 <span
                   class="badge"
-                  :class="actividad.estado === 'Completado' ? 'badge--completado' : 'badge--pendiente'"
+                  :class="`badge--${actividad.estado.toLowerCase().replace(/\s+/g, '-')}`"
                 >
                   {{ actividad.estado }}
                 </span>
@@ -483,7 +537,7 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <div v-if="mostrarModal" class="modal" @click.self="cerrarModal">
+    <div v-if="mostrarModal" class="modal">
       <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-bitacora-titulo">
         <form @submit.prevent="guardarActividad">
           <header class="modal__cabecera">
@@ -502,15 +556,21 @@ onUnmounted(() => {
           <div class="modal__cuerpo">
             <div class="campo">
               <label class="campo__etiqueta" for="bitacora-analista">Analista</label>
-              <input
+              <select
                 id="bitacora-analista"
                 v-model="formulario.analistaId"
                 class="campo__input"
-                type="text"
-                placeholder="Nombre del técnico"
-                maxlength="50"
                 :disabled="guardando"
-              />
+              >
+                <option value="" disabled>Selecciona un analista registrado</option>
+                <option
+                  v-for="usuario in analistasDisponibles"
+                  :key="usuario.id"
+                  :value="usuario.nombreCompleto"
+                >
+                  {{ usuario.nombreCompleto }} ({{ formatearRol(usuario.rol) }})
+                </option>
+              </select>
             </div>
 
             <div class="campo">
@@ -571,367 +631,59 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.vista__encabezado {
-  margin-bottom: 20px;
-}
-
-.vista__titulo {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1f2b;
-}
-
-.vista__subtitulo {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.tarjeta {
-  background: #ffffff;
-  border: 1px solid #e2e5ea;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
-  overflow: hidden;
-}
-
-.tarjeta__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eceff3;
-}
-
-.tarjeta__titulo {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1f2b;
-}
-
-.tarjeta__acciones {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tabla__envoltura {
-  padding: 8px 20px 20px;
-  overflow-x: auto;
-}
-
-.boton {
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.boton:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.boton--primario {
-  color: #ffffff;
-  background: #1f3a68;
-}
-
-.boton--primario:hover:not(:disabled) {
-  background: #16294a;
-}
-
-.boton--secundario {
-  color: #1f3a68;
-  background: #ffffff;
-  border-color: #d0d5dd;
-}
-
-.boton--secundario:hover:not(:disabled) {
-  background: #f8fafc;
-}
-
-.boton--recorrido {
-  color: #1f3a68;
-  background: #eff8ff;
-  border-color: #b2ddff;
-}
-
-.boton--recorrido:hover:not(:disabled) {
-  background: #d1e9ff;
-  border-color: #84caff;
-}
-
-.boton--recorrido-finalizar {
-  color: #ffffff;
-  background: #b42318;
-  border-color: #b42318;
-}
-
-.boton--recorrido-finalizar:hover:not(:disabled) {
-  background: #912018;
-}
-
-.recorrido {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 20px;
-  color: #ffffff;
-  background: #1f3a68;
-  border-bottom: 1px solid #eceff3;
-}
-
-.recorrido__tiempo {
-  font-size: 15px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.alerta {
-  margin: 16px 20px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: #b42318;
-  background: #fef3f2;
-  border: 1px solid #fecdca;
-  border-radius: 6px;
-}
-
-.alerta--formulario {
-  margin: 0;
-}
-
-.estado-vacio {
-  padding: 48px 20px;
-  text-align: center;
-}
-
-.estado-vacio__texto {
-  margin: 0;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.tabla {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.tabla__th {
-  padding: 11px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  text-align: left;
-  text-transform: uppercase;
-  color: #475467;
-  background: #f9fafb;
-  border-bottom: 1px solid #e2e5ea;
-}
-
-.tabla__th--corta,
-.tabla__th--acciones {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.tabla__fila:hover {
-  background: #f9fafb;
-}
-
-.tabla__td {
-  padding: 12px 12px;
-  font-size: 13px;
-  color: #344054;
-  border-bottom: 1px solid #f2f4f7;
-}
-
-.tabla__fila:last-child .tabla__td {
-  border-bottom: none;
-}
-
-.tabla__td--actividad {
-  font-weight: 500;
-  color: #1a1f2b;
-}
-
-.tabla__td--acciones {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.etiqueta {
-  display: inline-block;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #344054;
-  background: #f2f4f7;
-  border: 1px solid #e2e5ea;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.badge--pendiente {
-  color: #b54708;
-  background: #fffaeb;
-  border-color: #fec84b;
-}
-
-.badge--completado {
-  color: #067647;
-  background: #ecfdf3;
-  border-color: #abefc6;
-}
-
-.accion {
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  font-family: inherit;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.accion:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.accion--completar {
-  color: #067647;
-  background: #ecfdf3;
-  border: 1px solid #abefc6;
-}
-
-.accion--completar:hover:not(:disabled) {
-  background: #d1fadf;
-  border-color: #6ce9a6;
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(16, 24, 40, 0.55);
-}
-
-.modal__panel {
-  width: 100%;
-  max-width: 460px;
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.22);
-  overflow: hidden;
-}
-
-.modal__cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eceff3;
-}
-
-.modal__titulo {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1f2b;
-}
-
-.modal__cerrar {
-  padding: 0;
-  width: 28px;
-  height: 28px;
-  font-size: 20px;
-  line-height: 1;
-  font-family: inherit;
-  color: #667085;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.modal__cerrar:hover:not(:disabled) {
-  color: #1a1f2b;
-  background: #f2f4f7;
-}
-
-.modal__cuerpo {
-  padding: 18px 20px;
-}
-
-.modal__pie {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 14px 20px;
-  background: #f9fafb;
-  border-top: 1px solid #eceff3;
-}
-
-.campo {
-  margin-bottom: 16px;
-}
-
-.campo__etiqueta {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #344054;
-}
-
-.campo__input {
-  width: 100%;
-  padding: 9px 12px;
-  font-size: 14px;
-  font-family: inherit;
-  color: #1a1f2b;
-  background: #ffffff;
-  border: 1px solid #d0d5dd;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-.campo__input:focus {
-  outline: none;
-  border-color: #1f3a68;
-  box-shadow: 0 0 0 3px rgba(31, 58, 104, 0.12);
-}
-
-.campo__input:disabled {
-  background: #f2f4f7;
-  cursor: not-allowed;
-}
-
-.campo__textarea {
-  resize: vertical;
-  min-height: 74px;
-}
+.vista__encabezado { margin-bottom: 20px; }
+.vista__titulo { margin: 0; font-size: 20px; font-weight: 600; color: #1a1f2b; }
+.vista__subtitulo { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+.tarjeta { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); padding: 24px; margin-top: 20px; }
+.tarjeta__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.tarjeta__titulo { margin: 0; font-size: 15px; font-weight: 600; color: #1a1f2b; }
+.tarjeta__acciones { display: flex; align-items: center; gap: 10px; }
+.tabla__envoltura { overflow-x: auto; }
+.boton { padding: 8px 14px; font-size: 13px; font-weight: 500; font-family: inherit; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+.boton:disabled { cursor: not-allowed; opacity: 0.6; }
+.boton--primario { color: #ffffff; background: #1f3a68; }
+.boton--primario:hover:not(:disabled) { background: #16294a; }
+.boton--secundario { color: #1f3a68; background: #ffffff; border-color: #d0d5dd; }
+.boton--secundario:hover:not(:disabled) { background: #f8fafc; }
+.boton--recorrido { color: #1f3a68; background: #eff8ff; border-color: #b2ddff; }
+.boton--recorrido:hover:not(:disabled) { background: #d1e9ff; border-color: #84caff; }
+.boton--recorrido-finalizar { color: #ffffff; background: #b42318; border-color: #b42318; }
+.boton--recorrido-finalizar:hover:not(:disabled) { background: #912018; }
+.recorrido { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; color: #ffffff; background: #1f3a68; border-radius: 8px; margin-bottom: 4px; }
+.recorrido__tiempo { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.alerta { margin: 16px 0 0; padding: 10px 12px; font-size: 13px; color: #b42318; background: #fef3f2; border: 1px solid #fecdca; border-radius: 6px; }
+.alerta--formulario { margin: 0; }
+.estado-vacio { padding: 48px 20px; text-align: center; }
+.estado-vacio__texto { margin: 0; font-size: 14px; color: #6b7280; }
+.tabla { width: 100%; border-collapse: collapse; }
+.tabla__th { padding: 12px 8px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-align: left; text-transform: uppercase; color: #6b7280; background: transparent; border-bottom: 1px solid #e5e7eb; }
+.tabla__th--corta, .tabla__th--acciones { width: 1%; white-space: nowrap; }
+.tabla__fila:hover { background: #f9fafb; }
+.tabla__td { padding: 16px 8px; font-size: 13px; text-align: left; color: #344054; border-bottom: 1px solid #f3f4f6; }
+.tabla__fila:last-child .tabla__td { border-bottom: none; }
+.tabla__td--actividad { font-weight: 500; color: #1a1f2b; }
+.tabla__td--acciones { text-align: right; white-space: nowrap; }
+.badge { display: inline-block; padding: 4px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 999px; white-space: nowrap; }
+.badge--rutina, .badge--en-curso { color: #2563eb; background: #dbeafe; }
+.badge--urgente { color: #dc2626; background: #fee2e2; }
+.badge--pendiente-de-compra, .badge--pendiente { color: #d97706; background: #fef3c7; }
+.badge--completado { color: #16a34a; background: #dcfce7; }
+.accion { padding: 5px 12px; font-size: 12px; font-weight: 500; font-family: inherit; border-radius: 6px; cursor: pointer; }
+.accion:disabled { opacity: 0.6; cursor: not-allowed; }
+.accion--completar { color: #067647; background: #ecfdf3; border: 1px solid #abefc6; }
+.accion--completar:hover:not(:disabled) { background: #d1fadf; border-color: #6ce9a6; }
+.modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(16, 24, 40, 0.55); }
+.modal__panel { width: 100%; max-width: 460px; background: #ffffff; border-radius: 10px; box-shadow: 0 20px 40px rgba(16, 24, 40, 0.22); overflow: hidden; }
+.modal__cabecera { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #eceff3; }
+.modal__titulo { margin: 0; font-size: 15px; font-weight: 600; color: #1a1f2b; }
+.modal__cerrar { padding: 0; width: 28px; height: 28px; font-size: 20px; line-height: 1; font-family: inherit; color: #667085; background: transparent; border: none; border-radius: 6px; cursor: pointer; }
+.modal__cerrar:hover:not(:disabled) { color: #1a1f2b; background: #f2f4f7; }
+.modal__cuerpo { padding: 18px 20px; }
+.modal__pie { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; background: #f9fafb; border-top: 1px solid #eceff3; }
+.campo { margin-bottom: 16px; }
+.campo__etiqueta { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #344054; }
+.campo__input { width: 100%; padding: 9px 12px; font-size: 14px; font-family: inherit; color: #1a1f2b; background: #ffffff; border: 1px solid #d0d5dd; border-radius: 6px; box-sizing: border-box; }
+.campo__input:focus { outline: none; border-color: #1f3a68; box-shadow: 0 0 0 3px rgba(31, 58, 104, 0.12); }
+.campo__input:disabled { background: #f2f4f7; cursor: not-allowed; }
+.campo__textarea { resize: vertical; min-height: 74px; }
 </style>

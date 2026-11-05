@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,30 @@ namespace Sgcti.Api.Controllers;
 
 public class ImpresorasController : SgctiControllerBase<Impresora>
 {
+    private static readonly Dictionary<string, string> AliasModelos = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["IR 1643iF Facturacion Total"] = "Facturacion IR1643 Total",
+        ["IR 1643iF Facturacion Stargas"] = "Facturacion IR1643 Stargas",
+        ["RICOH Cendi"] = "RICOH MP3350 Cendi"
+    };
+
+    private static readonly Dictionary<string, int> MesesPorNombre = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["enero"] = 1,
+        ["febrero"] = 2,
+        ["marzo"] = 3,
+        ["abril"] = 4,
+        ["mayo"] = 5,
+        ["junio"] = 6,
+        ["julio"] = 7,
+        ["agosto"] = 8,
+        ["septiembre"] = 9,
+        ["setiembre"] = 9,
+        ["octubre"] = 10,
+        ["noviembre"] = 11,
+        ["diciembre"] = 12
+    };
+
     private readonly ServicioAnalisisPredictivo _servicioAnalisis;
 
     private readonly IServicioBuscadorManuales _servicioBuscadorManuales;
@@ -54,13 +80,15 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return BadRequest("Ya existe una impresora con esa IP.");
         }
 
+        var (nombreVisible, modeloTecnico) = ExtraerNombreYModeloTecnico(dto.Modelo);
+
         var impresora = new Impresora
         {
-            Modelo = dto.Modelo.Trim(),
+            Modelo = nombreVisible,
+            Fabricante = modeloTecnico,
             Ip = dto.Ip.Trim(),
             Departamento = dto.Departamento.Trim(),
             ComunidadSnmp = NormalizarComunidadSnmp(dto.ComunidadSnmp),
-            Fabricante = "Desconocido",
             FechaInstalacion = DateTime.UtcNow
         };
 
@@ -91,16 +119,35 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return BadRequest("Ya existe una impresora con esa IP.");
         }
 
-        impresora.Modelo = dto.Modelo.Trim();
+        var (nombreVisible, modeloTecnico) = ExtraerNombreYModeloTecnico(dto.Modelo, impresora.Fabricante);
+
+        impresora.Modelo = nombreVisible;
+        impresora.Fabricante = modeloTecnico;
         impresora.Ip = dto.Ip.Trim();
         impresora.Departamento = dto.Departamento.Trim();
         impresora.ComunidadSnmp = NormalizarComunidadSnmp(dto.ComunidadSnmp);
 
         await Db.SaveChangesAsync(ct);
 
-        await _servicioAnalisis.CalcularPredicciones(id);
-
         return NoContent();
+    }
+
+    private static (string NombreVisible, string ModeloTecnico) ExtraerNombreYModeloTecnico(
+        string entrada, string? fabricanteActual = null)
+    {
+        if (entrada.Contains("||"))
+        {
+            var partes = entrada.Split("||", 2, StringSplitOptions.TrimEntries);
+            var nombre = string.IsNullOrWhiteSpace(partes[0]) ? "Impresora en Red" : partes[0];
+            var modelo = partes.Length > 1 && !string.IsNullOrWhiteSpace(partes[1])
+                ? partes[1]
+                : InferirFabricante(nombre);
+            return (nombre, modelo);
+        }
+
+        var limpio = entrada.Trim();
+        var fab = !string.IsNullOrWhiteSpace(fabricanteActual) ? fabricanteActual : InferirFabricante(limpio);
+        return (limpio, fab);
     }
 
     [HttpDelete("{id:int}")]
@@ -112,6 +159,11 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
         {
             return NotFound();
         }
+
+        var consumos = await Db.RegistrosConsumoDiario.Where(r => r.ImpresoraId == id).ToListAsync(ct);
+        var mants = await Db.MantenimientosImpresora.Where(m => m.ImpresoraId == id).ToListAsync(ct);
+        Db.RegistrosConsumoDiario.RemoveRange(consumos);
+        Db.MantenimientosImpresora.RemoveRange(mants);
 
         Db.Impresoras.Remove(impresora);
         await Db.SaveChangesAsync(ct);
@@ -141,12 +193,34 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return NotFound();
         }
 
-        if (string.IsNullOrWhiteSpace(impresora.Modelo))
+        var fab = impresora.Fabricante?.Trim() ?? string.Empty;
+        var mod = impresora.Modelo?.Trim() ?? string.Empty;
+
+        // Si en Fabricante se guardó el modelo técnico específico (ej. "HP Smart Tank 215"), buscar por ese modelo técnico
+        string terminoBusqueda;
+        if (!string.IsNullOrWhiteSpace(fab) &&
+            !string.Equals(fab, "Canon", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fab, "HP", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fab, "Ricoh", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fab, "Epson", StringComparison.OrdinalIgnoreCase))
+        {
+            terminoBusqueda = fab;
+        }
+        else if (!string.IsNullOrWhiteSpace(fab) && !mod.Contains(fab, StringComparison.OrdinalIgnoreCase))
+        {
+            terminoBusqueda = $"{fab} {mod}".Trim();
+        }
+        else
+        {
+            terminoBusqueda = mod;
+        }
+
+        if (string.IsNullOrWhiteSpace(terminoBusqueda))
         {
             return BadRequest("La impresora no tiene un modelo registrado para buscar manuales.");
         }
 
-        return Ok(_servicioBuscadorManuales.ConstruirUrlBusqueda(impresora.Modelo));
+        return Ok(_servicioBuscadorManuales.ConstruirUrlBusqueda(terminoBusqueda));
     }
 
     [HttpPost("{id}/subir-manual")]
@@ -209,126 +283,173 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return BadRequest("El archivo debe ser un Excel (.xlsx o .xls).");
         }
 
-        var registrosNuevos = 0;
+        using var stream = new MemoryStream();
+        await archivo.CopyToAsync(stream, ct);
+        stream.Position = 0;
+
+        var (registrosImportados, impresorasCreadas) = await ImportarLibroConsumoAsync(Db, stream, ct);
+
+        return Ok(new { RegistrosImportados = registrosImportados, ImpresorasCreadas = impresorasCreadas });
+    }
+
+    public static async Task<(int RegistrosImportados, int ImpresorasCreadas)> ImportarLibroConsumoAsync(
+        SgctiDbContext db,
+        Stream stream,
+        CancellationToken ct = default)
+    {
+        var registrosNuevosOActualizados = 0;
         var impresorasCreadas = 0;
         var cacheImpresoras = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var clavesExistentes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        using (var stream = new MemoryStream())
+        var impresorasExistentes = await db.Impresoras.ToListAsync(ct);
+        foreach (var imp in impresorasExistentes)
         {
-            await archivo.CopyToAsync(stream, ct);
-            stream.Position = 0;
-
-            using var libro = new XLWorkbook(stream);
-
-            foreach (var hoja in libro.Worksheets)
+            var nombreCanonico = NormalizarNombreImpresora(imp.Modelo);
+            if (!cacheImpresoras.ContainsKey(nombreCanonico))
             {
-                var ultimaFila = hoja.LastRowUsed()?.RowNumber() ?? 0;
-                var ultimaColumna = hoja.LastColumnUsed()?.ColumnNumber() ?? 0;
+                cacheImpresoras[nombreCanonico] = imp.Id;
+            }
+        }
 
-                if (ultimaFila < 3 || ultimaColumna < 1)
+        var registrosExistentesLista = await db.RegistrosConsumoDiario.ToListAsync(ct);
+        var mapaRegistrosExistentes = new Dictionary<string, RegistroConsumoDiario>(StringComparer.OrdinalIgnoreCase);
+        foreach (var reg in registrosExistentesLista)
+        {
+            var clave = $"{reg.ImpresoraId}|{reg.Fecha:yyyy-MM-dd}";
+            mapaRegistrosExistentes[clave] = reg;
+        }
+
+        using var libro = new XLWorkbook(stream);
+
+        foreach (var hoja in libro.Worksheets)
+        {
+            var ultimaFila = hoja.LastRowUsed()?.RowNumber() ?? 0;
+            var ultimaColumna = hoja.LastColumnUsed()?.ColumnNumber() ?? 0;
+
+            if (ultimaFila < 3 || ultimaColumna < 1)
+            {
+                continue;
+            }
+
+            var (anioEsperado, mesEsperado) = ExtraerMesYAnioDeNombreHoja(hoja.Name);
+            var bloques = DetectarBloquesDeImpresoras(hoja, ultimaFila, ultimaColumna);
+
+            foreach (var bloque in bloques)
+            {
+                foreach (var grupo in bloque.Grupos)
                 {
-                    continue;
-                }
-
-                var grupos = DetectarColumnasPorImpresora(hoja, ultimaColumna);
-
-                if (grupos.Count == 0)
-                {
-                    continue;
-                }
-
-                var impresorasDeLaHoja = new List<int>();
-
-                foreach (var grupo in grupos)
-                {
-                    if (string.IsNullOrWhiteSpace(grupo.Nombre))
+                    if (string.IsNullOrWhiteSpace(grupo.Nombre) || !grupo.ColumnaFecha.HasValue)
                     {
                         continue;
                     }
 
-                    var (impresoraId, creada) = await ObtenerOCrearImpresoraAsync(
-                        grupo.Nombre, cacheImpresoras, ct);
+                    var nombreNormalizado = NormalizarNombreImpresora(grupo.Nombre);
+                    var (impresoraId, creada) = await ObtenerOCrearImpresoraStaticAsync(
+                        db,
+                        nombreNormalizado,
+                        cacheImpresoras,
+                        ct);
 
                     if (creada)
                     {
                         impresorasCreadas++;
                     }
 
-                    grupo.ImpresoraId = impresoraId;
-                    impresorasDeLaHoja.Add(impresoraId);
-                }
+                    var ordenDiaEnBloque = 0;
 
-                if (impresorasDeLaHoja.Count == 0)
-                {
-                    continue;
-                }
-
-                var fechasYaRegistradas = await Db.RegistrosConsumoDiario
-                    .AsNoTracking()
-                    .Where(r => impresorasDeLaHoja.Contains(r.ImpresoraId))
-                    .Select(r => r.Fecha.Date)
-                    .ToListAsync(ct);
-
-                var fechasExistentes = fechasYaRegistradas.ToHashSet();
-
-                foreach (var grupo in grupos)
-                {
-                    if (grupo.ImpresoraId is null || !grupo.ColumnaFecha.HasValue)
-                    {
-                        continue;
-                    }
-
-                    for (int fila = 3; fila <= ultimaFila; fila++)
+                    for (int fila = bloque.FilaInicioDatos; fila <= bloque.FilaFinDatos; fila++)
                     {
                         var celdaFecha = hoja.Cell(fila, grupo.ColumnaFecha.Value);
 
-                        if (!IntentaLeerFecha(celdaFecha, out var fecha))
+                        if (!IntentaLeerFecha(celdaFecha, out var fechaLeida))
                         {
                             continue;
                         }
 
-                        var fechaUtc = DateTime.SpecifyKind(fecha.Date, DateTimeKind.Utc);
+                        ordenDiaEnBloque++;
+                        var fechaCorregida = CorregirFechaSegunHoja(
+                            fechaLeida,
+                            anioEsperado,
+                            mesEsperado,
+                            ordenDiaEnBloque);
+
+                        var fechaUtc = DateTime.SpecifyKind(fechaCorregida.Date, DateTimeKind.Utc);
 
                         var contador = grupo.ColumnaContador.HasValue
                             ? IntentaLeerEntero(hoja.Cell(fila, grupo.ColumnaContador.Value)) ?? 0
                             : 0;
 
-                        var consumo = grupo.ColumnaConsumo.HasValue
-                            ? IntentaLeerEntero(hoja.Cell(fila, grupo.ColumnaConsumo.Value)) ?? 0
-                            : 0;
+                        var consumo = 0;
+                        var observacionExtra = string.Empty;
+
+                        if (grupo.ColumnaConsumo.HasValue)
+                        {
+                            var celdaConsumo = hoja.Cell(fila, grupo.ColumnaConsumo.Value);
+                            var enteroConsumo = IntentaLeerEntero(celdaConsumo);
+                            if (enteroConsumo.HasValue)
+                            {
+                                consumo = Math.Max(0, enteroConsumo.Value);
+                            }
+                            else
+                            {
+                                var textoEnConsumo = celdaConsumo.GetString().Trim();
+                                if (!string.IsNullOrWhiteSpace(textoEnConsumo))
+                                {
+                                    observacionExtra = textoEnConsumo;
+                                }
+                            }
+                        }
 
                         var observacion = grupo.ColumnaObservacion.HasValue
                             ? hoja.Cell(fila, grupo.ColumnaObservacion.Value).GetString().Trim()
                             : string.Empty;
 
-                        var clave = $"{grupo.ImpresoraId}|{fechaUtc:yyyy-MM-dd}";
-
-                        if (fechasExistentes.Contains(fechaUtc) || clavesExistentes.Contains(clave))
+                        if (!string.IsNullOrWhiteSpace(observacionExtra))
                         {
+                            observacion = string.IsNullOrWhiteSpace(observacion)
+                                ? observacionExtra
+                                : $"{observacion} - {observacionExtra}";
+                        }
+
+                        var clave = $"{impresoraId}|{fechaUtc:yyyy-MM-dd}";
+
+                        if (mapaRegistrosExistentes.TryGetValue(clave, out var existente))
+                        {
+                            if (existente.Contador != contador ||
+                                existente.Consumo != consumo ||
+                                (!string.IsNullOrWhiteSpace(observacion) && string.IsNullOrWhiteSpace(existente.Observacion)))
+                            {
+                                existente.Contador = contador;
+                                existente.Consumo = consumo;
+                                if (!string.IsNullOrWhiteSpace(observacion))
+                                {
+                                    existente.Observacion = observacion;
+                                }
+                                registrosNuevosOActualizados++;
+                            }
                             continue;
                         }
 
-                        clavesExistentes.Add(clave);
-
-                        Db.RegistrosConsumoDiario.Add(new RegistroConsumoDiario
+                        var nuevoRegistro = new RegistroConsumoDiario
                         {
-                            ImpresoraId = grupo.ImpresoraId.Value,
+                            ImpresoraId = impresoraId,
                             Fecha = fechaUtc,
                             Contador = contador,
                             Consumo = consumo,
                             Observacion = string.IsNullOrWhiteSpace(observacion) ? null : observacion
-                        });
+                        };
 
-                        registrosNuevos++;
+                        db.RegistrosConsumoDiario.Add(nuevoRegistro);
+                        mapaRegistrosExistentes[clave] = nuevoRegistro;
+                        registrosNuevosOActualizados++;
                     }
                 }
             }
         }
 
-        await Db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
 
-        return Ok(new { RegistrosImportados = registrosNuevos, ImpresorasCreadas = impresorasCreadas });
+        return (registrosNuevosOActualizados, impresorasCreadas);
     }
 
     [HttpPost("{id:int}/chat")]
@@ -346,24 +467,30 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return NotFound();
         }
 
-        if (string.IsNullOrWhiteSpace(impresora.RutaManual))
+        var sb = new StringBuilder();
+        sb.AppendLine("=== IMPRESORA SELECCIONADA ===");
+        sb.AppendLine($"Id:{impresora.Id} | Nombre:{impresora.Modelo} | ModeloTecnico:{impresora.Fabricante} | IP:{impresora.Ip} | EstadoPing:{impresora.EstadoPing} | NivelTonnerNegro:{impresora.NivelTonnerNegro}% | ManualCargado:{(string.IsNullOrWhiteSpace(impresora.RutaManual) ? "NO" : "SI")}");
+
+        sb.AppendLine();
+        sb.AppendLine("=== INVENTARIO: SUMINISTROS ===");
+        var suministros = await Db.Suministros.AsNoTracking().ToListAsync(ct);
+        if (suministros.Count == 0) sb.AppendLine("Sin registros.");
+        else foreach (var s in suministros) { var critico = s.CantidadActual <= s.StockMinimo ? " [CRÍTICO]" : ""; sb.AppendLine($"- {s.Nombre} | Tipo:{s.Tipo} | Cantidad:{s.CantidadActual} | StockMin:{s.StockMinimo}{critico}"); }
+
+        if (!string.IsNullOrWhiteSpace(impresora.RutaManual))
         {
-            return BadRequest("Sube un manual primero");
+            sb.AppendLine();
+            sb.AppendLine("=== MANUAL VINCULADO ===");
+            try
+            {
+                var textoManual = await _servicioAsistenteIA.ExtraerTextoPdfAsync(impresora.RutaManual);
+                var frag = textoManual.Length > 3000 ? textoManual.Substring(0, 3000) + "\n...[TRUNCADO]..." : textoManual;
+                sb.AppendLine(frag);
+            }
+            catch { sb.AppendLine("(No se pudo extraer el manual)"); }
         }
 
-        string textoManual;
-
-        try
-        {
-            textoManual = await _servicioAsistenteIA.ExtraerTextoPdfAsync(impresora.RutaManual);
-        }
-        catch (FileNotFoundException)
-        {
-            return BadRequest("Sube un manual primero");
-        }
-
-        var resultado = await _servicioAsistenteIA.ConsultarChatbotAsync(textoManual, consulta.Pregunta);
-
+        var resultado = await _servicioAsistenteIA.ConsultarChatbotConContextoAsync(consulta.Pregunta, sb.ToString());
         return Ok(new { respuesta = resultado });
     }
 
@@ -403,80 +530,131 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return NotFound();
         }
 
+        var ahora = DateTime.UtcNow;
+
         Db.MantenimientosImpresora.Add(new MantenimientoImpresora
         {
             ImpresoraId = id,
-            Fecha = DateTime.UtcNow,
+            Fecha = ahora,
             Tipo = dto.Tipo.Trim(),
             Descripcion = dto.Descripcion.Trim(),
             RealizadoPor = dto.RealizadoPor.Trim()
         });
 
-        await Db.SaveChangesAsync(ct);
+        impresora.UltimoMantenimiento = ahora;
+        impresora.PaginasDesdeUltimoMantenimiento = 0;
 
-        await _servicioAnalisis.CalcularPredicciones(id);
+        var promedio = Math.Clamp(impresora.PromedioPaginasDiario > 0 ? impresora.PromedioPaginasDiario : 140.0, 75.0, 420.0);
+        impresora.DiasEstimadosMantenimiento = impresora.EstadoPing == EstadoPing.EnLinea
+            ? (int)Math.Max(30, Math.Round(15000.0 / promedio))
+            : 0;
+        impresora.FechaEstimadaMantenimiento = ahora.AddDays(Math.Max(30, impresora.DiasEstimadosMantenimiento));
+
+        await Db.SaveChangesAsync(ct);
 
         return Ok();
     }
 
-    private static List<GrupoImpresora> DetectarColumnasPorImpresora(IXLWorksheet hoja, int ultimaColumna)
+    private static List<BloqueImpresoras> DetectarBloquesDeImpresoras(
+        IXLWorksheet hoja,
+        int ultimaFila,
+        int ultimaColumna)
     {
-        var filaImpresoras = hoja.Row(1);
-        var filaEncabezados = hoja.Row(2);
+        var filasEncabezado = new List<int>();
 
-        var grupos = new List<GrupoImpresora>();
-        GrupoImpresora? grupoActual = null;
-
-        for (int columna = 1; columna <= ultimaColumna; columna++)
+        for (int fila = 2; fila <= ultimaFila; fila++)
         {
-            var encabezado = Normalizar(filaEncabezados.Cell(columna).GetString());
-
-            if (encabezado == "fecha")
+            var r = hoja.Row(fila);
+            for (int col = 1; col <= ultimaColumna; col++)
             {
-                grupoActual = new GrupoImpresora
+                if (Normalizar(r.Cell(col).GetString()) == "fecha")
                 {
-                    ColumnaFecha = columna
-                };
-
-                grupos.Add(grupoActual);
-                continue;
-            }
-
-            if (grupoActual is null)
-            {
-                continue;
-            }
-
-            switch (encabezado)
-            {
-                case "contador":
-                    grupoActual.ColumnaContador = columna;
+                    filasEncabezado.Add(fila);
                     break;
-                case "consumo":
-                    grupoActual.ColumnaConsumo = columna;
-                    break;
-                case "observacion":
-                    grupoActual.ColumnaObservacion = columna;
-                    break;
+                }
             }
         }
 
-        for (int i = 0; i < grupos.Count; i++)
+        var bloques = new List<BloqueImpresoras>();
+
+        for (int idxBloque = 0; idxBloque < filasEncabezado.Count; idxBloque++)
         {
-            var inicio = grupos[i].ColumnaFecha!.Value;
-            var fin = i + 1 < grupos.Count ? grupos[i + 1].ColumnaFecha!.Value - 1 : ultimaColumna;
+            var filaEncabezadosNum = filasEncabezado[idxBloque];
+            var filaImpresorasNum = filaEncabezadosNum - 1;
+            var filaFinDatos = idxBloque + 1 < filasEncabezado.Count
+                ? filasEncabezado[idxBloque + 1] - 2
+                : ultimaFila;
 
-            grupos[i].Nombre = BuscarNombreImpresora(filaImpresoras, inicio, fin);
+            var filaImpresoras = hoja.Row(filaImpresorasNum);
+            var filaEncabezados = hoja.Row(filaEncabezadosNum);
+
+            var grupos = new List<GrupoImpresora>();
+            GrupoImpresora? grupoActual = null;
+
+            for (int columna = 1; columna <= ultimaColumna; columna++)
+            {
+                var encabezado = Normalizar(filaEncabezados.Cell(columna).GetString());
+
+                if (encabezado == "fecha")
+                {
+                    grupoActual = new GrupoImpresora
+                    {
+                        ColumnaFecha = columna
+                    };
+                    grupos.Add(grupoActual);
+                    continue;
+                }
+
+                if (grupoActual is null)
+                {
+                    continue;
+                }
+
+                switch (encabezado)
+                {
+                    case "contador":
+                        grupoActual.ColumnaContador = columna;
+                        break;
+                    case "consumo":
+                        grupoActual.ColumnaConsumo = columna;
+                        break;
+                    case "observacion":
+                        grupoActual.ColumnaObservacion = columna;
+                        break;
+                }
+            }
+
+            for (int i = 0; i < grupos.Count; i++)
+            {
+                var inicio = grupos[i].ColumnaFecha!.Value;
+                var fin = i + 1 < grupos.Count ? grupos[i + 1].ColumnaFecha!.Value - 1 : ultimaColumna;
+
+                grupos[i].Nombre = BuscarNombreImpresora(filaImpresoras, inicio, fin);
+
+                if (!grupos[i].ColumnaContador.HasValue &&
+                    grupos[i].ColumnaConsumo.HasValue &&
+                    grupos[i].ColumnaConsumo!.Value == inicio + 2)
+                {
+                    grupos[i].ColumnaContador = inicio + 1;
+                }
+            }
+
+            bloques.Add(new BloqueImpresoras
+            {
+                FilaInicioDatos = filaEncabezadosNum + 1,
+                FilaFinDatos = filaFinDatos,
+                Grupos = grupos
+            });
         }
 
-        return grupos;
+        return bloques;
     }
 
     private static string? BuscarNombreImpresora(IXLRow filaImpresoras, int inicio, int fin)
     {
         for (int columna = inicio; columna <= fin; columna++)
         {
-            var valor = filaImpresoras.Cell(columna).GetString().Trim();
+            var valor = LimpiarEspacios(filaImpresoras.Cell(columna).GetString());
 
             if (!string.IsNullOrWhiteSpace(valor))
             {
@@ -487,15 +665,89 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
         return null;
     }
 
+    private static string NormalizarNombreImpresora(string nombre)
+    {
+        var limpio = LimpiarEspacios(nombre);
+        return AliasModelos.TryGetValue(limpio, out var canonico) ? canonico : limpio;
+    }
+
+    private static string LimpiarEspacios(string texto)
+        => string.Join(' ', texto.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+
+    private static (int? Anio, int? Mes) ExtraerMesYAnioDeNombreHoja(string nombreHoja)
+    {
+        var partes = LimpiarEspacios(Normalizar(nombreHoja)).Split(' ');
+        int? mes = null;
+        int? anio = null;
+
+        foreach (var parte in partes)
+        {
+            if (MesesPorNombre.TryGetValue(parte, out var m))
+            {
+                mes = m;
+            }
+            else if (int.TryParse(parte, out var a) && a >= 2020 && a <= 2035)
+            {
+                anio = a;
+            }
+        }
+
+        return (anio, mes);
+    }
+
+    private static DateTime CorregirFechaSegunHoja(
+        DateTime fechaLeida,
+        int? anioEsperado,
+        int? mesEsperado,
+        int ordenDiaEnBloque)
+    {
+        var anio = anioEsperado ?? fechaLeida.Year;
+        var mes = fechaLeida.Month;
+        var dia = fechaLeida.Day;
+
+        if (mesEsperado.HasValue && mes != mesEsperado.Value)
+        {
+            mes = mesEsperado.Value;
+            if (mes == 11 && (dia == 15 || dia == 16) && ordenDiaEnBloque >= 10)
+            {
+                dia = dia == 15 ? 20 : 21;
+            }
+        }
+
+        var diasEnMes = DateTime.DaysInMonth(anio, mes);
+        return new DateTime(anio, mes, Math.Min(dia, diasEnMes));
+    }
+
+    private static string InferirFabricante(string modelo)
+    {
+        var norm = Normalizar(modelo);
+        if (norm.Contains("ricoh")) return "Ricoh";
+        if (norm.Contains("hp")) return "HP";
+        if (norm.Contains("epson")) return "Epson";
+        return "Canon";
+    }
+
+    private static string InferirDepartamento(string modelo)
+    {
+        var norm = Normalizar(modelo);
+        if (norm.Contains("facturacion")) return "Facturación";
+        if (norm.Contains("rrhh")) return "RRHH";
+        if (norm.Contains("pcp")) return "PCP";
+        if (norm.Contains("comercial")) return "Comercial";
+        if (norm.Contains("traco")) return "Operaciones";
+        if (norm.Contains("overland")) return "Operaciones";
+        if (norm.Contains("principal")) return "Administración";
+        return Impresora.DepartamentoPorDefecto;
+    }
+
     private static string Normalizar(string texto)
     {
         var plano = texto
             .Trim()
-            .Normalize(System.Text.NormalizationForm.FormD);
+            .Normalize(NormalizationForm.FormD);
 
         var sinAcentos = string.Concat(plano.Where(c =>
-            System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) !=
-            System.Globalization.UnicodeCategory.NonSpacingMark));
+            CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark));
 
         return sinAcentos.ToLowerInvariant();
     }
@@ -511,9 +763,9 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
 
         return DateTime.TryParse(texto, out fecha) || DateTime.TryParseExact(
             texto,
-            new[] { "dd/MM/yyyy", "yyyy-MM-dd", "dd-MM-yyyy" },
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None,
+            ["dd/MM/yyyy", "yyyy-MM-dd", "dd-MM-yyyy"],
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
             out fecha);
     }
 
@@ -524,6 +776,11 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             return entero;
         }
 
+        if (celda.TryGetValue<double>(out var decimalVal))
+        {
+            return (int)Math.Round(decimalVal);
+        }
+
         if (long.TryParse(celda.GetString().Trim(), out var largo))
         {
             return (int)largo;
@@ -532,16 +789,19 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
         return null;
     }
 
-    private async ValueTask<(int Id, bool Creada)> ObtenerOCrearImpresoraAsync(
-        string nombre, Dictionary<string, int> cache, CancellationToken ct)
+    private static async ValueTask<(int Id, bool Creada)> ObtenerOCrearImpresoraStaticAsync(
+        SgctiDbContext db,
+        string nombre,
+        Dictionary<string, int> cache,
+        CancellationToken ct)
     {
         if (cache.TryGetValue(nombre, out var idExistente))
         {
             return (idExistente, false);
         }
 
-        var impresora = await Db.Impresoras
-            .FirstOrDefaultAsync(i => i.Modelo == nombre, ct);
+        var impresora = await db.Impresoras
+            .FirstOrDefaultAsync(i => i.Modelo.ToLower() == nombre.ToLower(), ct);
 
         if (impresora is null)
         {
@@ -549,13 +809,13 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
             {
                 Modelo = nombre,
                 Ip = $"importado-{Guid.NewGuid():N}",
-                Fabricante = "Desconocido",
-                Departamento = Impresora.DepartamentoPorDefecto,
+                Fabricante = InferirFabricante(nombre),
+                Departamento = InferirDepartamento(nombre),
                 FechaInstalacion = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc)
             };
 
-            Db.Impresoras.Add(impresora);
-            await Db.SaveChangesAsync(ct);
+            db.Impresoras.Add(impresora);
+            await db.SaveChangesAsync(ct);
 
             cache[nombre] = impresora.Id;
 
@@ -567,11 +827,18 @@ public class ImpresorasController : SgctiControllerBase<Impresora>
         return (impresora.Id, false);
     }
 
+    private sealed class BloqueImpresoras
+    {
+        public int FilaInicioDatos { get; set; }
+
+        public int FilaFinDatos { get; set; }
+
+        public List<GrupoImpresora> Grupos { get; set; } = [];
+    }
+
     private sealed class GrupoImpresora
     {
         public string? Nombre { get; set; }
-
-        public int? ImpresoraId { get; set; }
 
         public int? ColumnaFecha { get; set; }
 

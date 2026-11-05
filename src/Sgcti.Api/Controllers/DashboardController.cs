@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sgcti.Core.Entities;
-using Sgcti.Core.Services;
 using Sgcti.Infrastructure.Persistence;
 
 namespace Sgcti.Api.Controllers;
@@ -14,12 +13,9 @@ public class DashboardController : ControllerBase
 
     private readonly SgctiDbContext _db;
 
-    private readonly ServicioAnalisisPredictivo _servicioPredictivo;
-
-    public DashboardController(SgctiDbContext db, ServicioAnalisisPredictivo servicioPredictivo)
+    public DashboardController(SgctiDbContext db)
     {
         _db = db;
-        _servicioPredictivo = servicioPredictivo;
     }
 
     [HttpGet("resumen")]
@@ -32,7 +28,7 @@ public class DashboardController : ControllerBase
             .CountAsync(t => t.Estado != EstadoTicket.Resuelto, ct);
 
         var suministrosCriticos = await _db.Suministros
-            .CountAsync(s => s.CantidadActual <= s.StockMinimo, ct);
+            .CountAsync(s => s.CantidadActual <= s.StockMinimo || s.CantidadActual < 3, ct);
 
         var impresorasDesconectadas = await _db.Impresoras
             .CountAsync(i => i.EstadoPing == EstadoPing.Desconectado, ct);
@@ -42,9 +38,15 @@ public class DashboardController : ControllerBase
 
         var alertasSuministros = await _db.Suministros
             .AsNoTracking()
-            .Where(s => s.CantidadActual <= s.StockMinimo)
+            .Where(s => s.CantidadActual <= s.StockMinimo || s.CantidadActual < 3)
             .OrderBy(s => s.Nombre)
-            .Select(s => new { nombre = s.Nombre, cantidadActual = s.CantidadActual })
+            .Select(s => new
+            {
+                nombre = s.Nombre,
+                tipo = s.Tipo,
+                cantidadActual = s.CantidadActual,
+                stockMinimo = s.StockMinimo
+            })
             .ToListAsync(ct);
 
         var actividadReciente = await _db.BitacoraActividades
@@ -54,49 +56,29 @@ public class DashboardController : ControllerBase
             .Select(b => new { analista = b.AnalistaId, actividad = b.DescripcionActividad, hora = b.HoraInicio })
             .ToListAsync(ct);
 
-        var impresoras = await _db.Impresoras
+        var impresorasEnLinea = await _db.Impresoras
             .AsNoTracking()
+            .Where(i => i.EstadoPing == EstadoPing.EnLinea)
+            .OrderBy(i => i.Id)
             .ToListAsync(ct);
 
         var alertasPredictivas = new List<string>();
 
-        foreach (var impresora in impresoras)
+        foreach (var imp in impresorasEnLinea)
         {
-            if (ct.IsCancellationRequested)
-            {
-                break;
-            }
-
-            try
-            {
-                await _servicioPredictivo.CalcularPredicciones(impresora.Id);
-            }
-            catch
-            {
-                continue;
-            }
-
-            var actualizada = await _db.Impresoras
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == impresora.Id, ct);
-
-            if (actualizada is null)
-            {
-                continue;
-            }
-
-            if (actualizada.DiasEstimadosAgotamientoTonner >= 0
-                && actualizada.DiasEstimadosAgotamientoTonner <= UmbralDiasAlerta)
+            if (imp.DiasEstimadosAgotamientoTonner > 0
+                && imp.DiasEstimadosAgotamientoTonner <= UmbralDiasAlerta)
             {
                 alertasPredictivas.Add(
-                    $"⚠️ Tóner crítico en {actualizada.Modelo}: se agotará en aprox. {actualizada.DiasEstimadosAgotamientoTonner} días.");
+                    $"⚠️ Tóner crítico ({imp.NivelTonnerNegro}%) en {imp.Modelo}: se agotará en aprox. {imp.DiasEstimadosAgotamientoTonner} días.");
             }
 
-            if (actualizada.DiasEstimadosMantenimiento >= 0
-                && actualizada.DiasEstimadosMantenimiento <= UmbralDiasAlerta)
+            if (imp.PaginasDesdeUltimoMantenimiento > 0
+                && imp.DiasEstimadosMantenimiento > 0
+                && imp.DiasEstimadosMantenimiento <= UmbralDiasAlerta)
             {
                 alertasPredictivas.Add(
-                    $"⚠️ Mantenimiento próximo en {actualizada.Modelo}: toca en aprox. {actualizada.DiasEstimadosMantenimiento} días.");
+                    $"⚠️ Mantenimiento próximo en {imp.Modelo}: toca en aprox. {imp.DiasEstimadosMantenimiento} días.");
             }
         }
 

@@ -9,6 +9,7 @@ import ConsumoImpresorasView from '@/views/ConsumoImpresorasView.vue'
 import SuministrosView from '@/views/SuministrosView.vue'
 import BitacoraView from '@/views/BitacoraView.vue'
 import UsuariosView from '@/views/UsuariosView.vue'
+import AsistenteView from '@/views/AsistenteView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,6 +58,11 @@ const router = createRouter({
           path: 'usuarios',
           name: 'usuarios',
           component: UsuariosView,
+        },
+        {
+          path: 'asistente',
+          name: 'asistente',
+          component: AsistenteView,
         },
       ],
     },

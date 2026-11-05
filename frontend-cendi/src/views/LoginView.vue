@@ -76,145 +76,276 @@ function mensajeDeError(e: unknown): string {
 </script>
 
 <template>
-  <div class="login">
-    <form class="login__card" @submit.prevent="iniciarSesion">
-      <h1 class="login__titulo">Sistema de Control de Suministros</h1>
-      <p class="login__subtitulo">Gestión de los Servicios TI</p>
-
-      <div class="campo">
-        <label class="campo__etiqueta" for="usuario">Usuario</label>
-        <input
-          id="usuario"
-          v-model="form.usuario"
-          class="campo__input"
-          type="text"
-          autocomplete="username"
-          placeholder="admin"
-          :disabled="cargando"
-        />
+  <div class="login-container">
+    <!-- Panel Izquierdo: Emblema -->
+    <div class="brand-panel">
+      <div class="logo-wrapper">
+        <img src="@/assets/images/login-bg.png" alt="Emblema SGCTI" class="brand-logo" />
       </div>
-
-      <div class="campo">
-        <label class="campo__etiqueta" for="password">Contraseña</label>
-        <input
-          id="password"
-          v-model="form.password"
-          class="campo__input"
-          type="password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          :disabled="cargando"
-        />
+      <div class="brand-footer">
+        <p>Plataforma corporativa de gestión</p>
       </div>
+    </div>
 
-      <p v-if="error" class="login__error">{{ error }}</p>
+    <!-- Panel Derecho: Formulario -->
+    <div class="form-panel">
+      <div class="login-card">
+        <div class="card-header">
+          <div class="card-brand">
+            <img src="/logo-icono.png" alt="Icono" class="card-icon" />
+            <span class="card-brand__nombre">SGCTI</span>
+          </div>
+          <h2>Iniciar sesión</h2>
+          <p>Bienvenido. Ingresa tus credenciales para continuar.</p>
+        </div>
 
-      <button class="login__boton" type="submit" :disabled="cargando">
-        {{ cargando ? 'Ingresando...' : 'Ingresar' }}
-      </button>
-    </form>
+        <form @submit.prevent="iniciarSesion" class="login-form">
+          <div class="input-group">
+            <label for="usuario">Usuario</label>
+            <div class="input-wrapper">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="#64748b"
+                viewBox="0 0 256 256"
+                class="input-icon"
+              >
+                <path
+                  d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"
+                ></path>
+              </svg>
+              <input
+                type="text"
+                id="usuario"
+                v-model="form.usuario"
+                autocomplete="username"
+                :disabled="cargando"
+              />
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="contrasena">Contraseña</label>
+            <div class="input-wrapper">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="#64748b"
+                viewBox="0 0 256 256"
+                class="input-icon"
+              >
+                <path
+                  d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,140,152Z"
+                ></path>
+              </svg>
+              <input
+                type="password"
+                id="contrasena"
+                v-model="form.password"
+                autocomplete="current-password"
+                :disabled="cargando"
+              />
+            </div>
+          </div>
+
+          <p v-if="error" class="login-error">{{ error }}</p>
+
+          <button type="submit" class="btn-submit" :disabled="cargando">
+            {{ cargando ? 'Ingresando...' : 'Ingresar' }}
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.login {
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.brand-panel {
+  flex: 0 0 40%;
+  max-width: 40%;
+  background-color: #04193c; /* Azul muy oscuro para fundirse con la imagen */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-wrapper {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 24px;
-  background: #f0f2f5;
+  padding: 2rem;
 }
 
-.login__card {
+.brand-logo {
   width: 100%;
-  max-width: 360px;
-  padding: 32px;
-  background: #ffffff;
-  border: 1px solid #e2e5ea;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
+  max-height: 65vh;
+  object-fit: contain;
 }
 
-.login__titulo {
+.brand-footer p {
+  position: absolute;
+  bottom: 30px;
+  left: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1f2b;
-  text-align: center;
 }
 
-.login__subtitulo {
-  margin: 6px 0 28px;
-  font-size: 14px;
-  color: #6b7280;
-  text-align: center;
+.form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
-.campo {
-  margin-bottom: 18px;
-}
-
-.campo__etiqueta {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.campo__input {
+.login-card {
+  background: white;
   width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-family: inherit;
-  color: #1a1f2b;
-  background: #ffffff;
-  border: 1px solid #d0d5dd;
-  border-radius: 6px;
-  box-sizing: border-box;
+  max-width: 440px;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
 }
 
-.campo__input:focus {
+.card-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.card-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.card-icon {
+  width: 48px;
+}
+
+.card-brand__nombre {
+  color: #1d4ed8;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.card-header h2 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-header p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  display: block;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 12px 12px 44px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #0f172a;
+  background-color: white;
+  transition: 0.3s;
+}
+
+.input-wrapper input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.2);
 }
 
-.campo__input:disabled {
-  background: #f3f4f6;
+.input-wrapper input:disabled {
+  background-color: #f1f5f9;
   cursor: not-allowed;
 }
 
-.login__error {
-  margin: 0 0 16px;
-  padding: 10px 12px;
-  font-size: 13px;
+.login-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
   color: #b42318;
   background: #fef3f2;
   border: 1px solid #fecdca;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
-.login__boton {
+.btn-submit {
   width: 100%;
-  padding: 11px 16px;
-  font-size: 15px;
-  font-weight: 500;
-  font-family: inherit;
-  color: #ffffff;
-  background: #2563eb;
+  padding: 12px;
+  background-color: #1d4ed8;
+  color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
   cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+  margin-top: 1rem;
 }
 
-.login__boton:hover:not(:disabled) {
-  background: #1d4ed8;
+.btn-submit:hover:not(:disabled) {
+  background-color: #1e40af;
 }
 
-.login__boton:disabled {
-  background: #93b4f5;
+.btn-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-submit:disabled {
+  background-color: #93c5fd;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .brand-panel {
+    display: none;
+  }
+
+  .login-card {
+    padding: 2rem;
+  }
 }
 </style>

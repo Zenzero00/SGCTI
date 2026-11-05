@@ -69,6 +69,54 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.ToTable("BitacoraActividades", (string)null);
                 });
 
+            modelBuilder.Entity("Sgcti.Core.Entities.CategoriaTicket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("CategoriasTicket", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Hardware"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Software"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Impresoras"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Periféricos"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Nombre = "Red"
+                        });
+                });
+
             modelBuilder.Entity("Sgcti.Core.Entities.Consumible", b =>
                 {
                     b.Property<int>("Id")
@@ -111,6 +159,84 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Consumibles", (string)null);
+                });
+
+            modelBuilder.Entity("Sgcti.Core.Entities.Departamento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PrioridadPorDefecto")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Sigla")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.HasIndex("Sigla")
+                        .IsUnique();
+
+                    b.ToTable("Departamentos", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Gerencia",
+                            PrioridadPorDefecto = "Alta",
+                            Sigla = "GER"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Facturación",
+                            PrioridadPorDefecto = "Media",
+                            Sigla = "FAC"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Almacén",
+                            PrioridadPorDefecto = "Media",
+                            Sigla = "ALM"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Administración",
+                            PrioridadPorDefecto = "Media",
+                            Sigla = "ADM"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Nombre = "Operaciones",
+                            PrioridadPorDefecto = "Media",
+                            Sigla = "OPE"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Nombre = "TI",
+                            PrioridadPorDefecto = "Media",
+                            Sigla = "TI"
+                        });
                 });
 
             modelBuilder.Entity("Sgcti.Core.Entities.HistorialConsumo", b =>
@@ -427,10 +553,22 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Departamento")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("EquipoAfectado")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("Estado")
                         .IsRequired()
@@ -443,6 +581,9 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("FechaResolucion")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Prioridad")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -451,12 +592,24 @@ namespace Sgcti.Infrastructure.Persistence.Migrations
                     b.Property<int>("SLAHoras")
                         .HasColumnType("integer");
 
+                    b.Property<string>("SolucionAplicada")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("SuministrosUtilizados")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("Titulo")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Categoria");
+
+                    b.HasIndex("Departamento");
 
                     b.HasIndex("Estado");
 

@@ -30,6 +30,10 @@ public class SgctiDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
+    public DbSet<Departamento> Departamentos => Set<Departamento>();
+
+    public DbSet<CategoriaTicket> CategoriasTicket => Set<CategoriaTicket>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -96,8 +100,21 @@ public class SgctiDbContext : DbContext
             entity.Property(t => t.Estado).HasConversion<string>().HasMaxLength(20);
             entity.Property(t => t.Prioridad).HasConversion<string>().HasMaxLength(20);
             entity.Property(t => t.FechaCreacion).IsRequired();
+            entity.Property(t => t.Solicitante).HasMaxLength(150);
+            entity.Property(t => t.TelegramChatId).HasMaxLength(100);
+            entity.Property(t => t.CodigoNomenclatura).HasMaxLength(30);
+            entity.Property(t => t.Departamento).HasMaxLength(100);
+            entity.Property(t => t.Categoria).HasMaxLength(100);
+            entity.Property(t => t.EquipoAfectado).HasMaxLength(150);
+            entity.Property(t => t.SolucionAplicada).HasMaxLength(2000);
+            entity.Property(t => t.SuministrosUtilizados).HasMaxLength(1000);
             entity.HasIndex(t => t.FechaCreacion);
             entity.HasIndex(t => t.Estado);
+            entity.HasIndex(t => t.Solicitante);
+            entity.HasIndex(t => t.TelegramChatId);
+            entity.HasIndex(t => t.CodigoNomenclatura).IsUnique();
+            entity.HasIndex(t => t.Departamento);
+            entity.HasIndex(t => t.Categoria);
         });
 
         modelBuilder.Entity<BitacoraActividad>(entity =>
@@ -167,7 +184,13 @@ public class SgctiDbContext : DbContext
             entity.Property(u => u.PasswordHash).HasMaxLength(200).IsRequired();
             entity.Property(u => u.Rol).HasMaxLength(20).IsRequired();
             entity.Property(u => u.Activo).HasDefaultValue(true);
+            entity.Property(u => u.Cargo).HasMaxLength(100);
+            entity.Property(u => u.Departamento).HasMaxLength(100);
+            entity.Property(u => u.PrioridadPersonalizada).HasConversion<string>().HasMaxLength(20);
+            entity.Property(u => u.TelegramUsuarioOId).HasMaxLength(100);
             entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Departamento);
+            entity.HasIndex(u => u.TelegramUsuarioOId);
 
             entity.HasData(new Usuario
             {
@@ -178,6 +201,38 @@ public class SgctiDbContext : DbContext
                 Rol = Usuario.RolAdmin,
                 Activo = true
             });
+        });
+
+        modelBuilder.Entity<Departamento>(entity =>
+        {
+            entity.ToTable("Departamentos");
+            entity.Property(d => d.Nombre).HasMaxLength(100).IsRequired();
+            entity.Property(d => d.Sigla).HasMaxLength(10).IsRequired();
+            entity.Property(d => d.PrioridadPorDefecto).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.HasIndex(d => d.Nombre).IsUnique();
+            entity.HasIndex(d => d.Sigla).IsUnique();
+
+            entity.HasData(
+                new Departamento { Id = 1, Nombre = "Gerencia", Sigla = "GER", PrioridadPorDefecto = PrioridadTicket.Alta },
+                new Departamento { Id = 2, Nombre = "Facturación", Sigla = "FAC", PrioridadPorDefecto = PrioridadTicket.Media },
+                new Departamento { Id = 3, Nombre = "Almacén", Sigla = "ALM", PrioridadPorDefecto = PrioridadTicket.Media },
+                new Departamento { Id = 4, Nombre = "Administración", Sigla = "ADM", PrioridadPorDefecto = PrioridadTicket.Media },
+                new Departamento { Id = 5, Nombre = "Operaciones", Sigla = "OPE", PrioridadPorDefecto = PrioridadTicket.Media },
+                new Departamento { Id = 6, Nombre = "TI", Sigla = "TI", PrioridadPorDefecto = PrioridadTicket.Media });
+        });
+
+        modelBuilder.Entity<CategoriaTicket>(entity =>
+        {
+            entity.ToTable("CategoriasTicket");
+            entity.Property(c => c.Nombre).HasMaxLength(100).IsRequired();
+            entity.HasIndex(c => c.Nombre).IsUnique();
+
+            entity.HasData(
+                new CategoriaTicket { Id = 1, Nombre = "Hardware" },
+                new CategoriaTicket { Id = 2, Nombre = "Software" },
+                new CategoriaTicket { Id = 3, Nombre = "Impresoras" },
+                new CategoriaTicket { Id = 4, Nombre = "Periféricos" },
+                new CategoriaTicket { Id = 5, Nombre = "Red" });
         });
     }
 }

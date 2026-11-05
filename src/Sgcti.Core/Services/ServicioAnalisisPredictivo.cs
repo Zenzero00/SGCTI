@@ -5,11 +5,8 @@ namespace Sgcti.Core.Services;
 
 public class ServicioAnalisisPredictivo
 {
-    private const int RendimientoTonnerPaginas = 3000;
-
-    private const int IntervaloMantenimientoPaginas = 50000;
-
-    private const int VentanaPromedioDias = 30;
+    private const int RendimientoTonnerPaginas = 3500;
+    private const int IntervaloMantenimientoPaginas = 15000;
 
     private readonly IImpresoraRepositorio _repositorio;
 
@@ -26,58 +23,32 @@ public class ServicioAnalisisPredictivo
             return;
         }
 
-        var consumoReciente = await _repositorio.ObtenerHistorialRecienteAsync(
-            impresoraId, DateTime.UtcNow.AddDays(-VentanaPromedioDias));
+        // Si la impresora está desconectada, no debe mostrar días de predicción ni lanzar alertas
+        if (impresora.EstadoPing != EstadoPing.EnLinea)
+        {
+            impresora.NivelTonnerNegro = 0;
+            impresora.DiasEstimadosAgotamientoTonner = 0;
+            impresora.DiasEstimadosMantenimiento = 0;
+            impresora.AlertaStockCritico = false;
+            await _repositorio.GuardarCambiosAsync();
+            return;
+        }
 
-        impresora.PromedioPaginasDiario = CalcularPromedioPaginasDiario(impresora, consumoReciente);
+        var promedioDiario = Math.Clamp(impresora.PromedioPaginasDiario > 0 ? impresora.PromedioPaginasDiario : 120.0, 60.0, 420.0);
+        impresora.PromedioPaginasDiario = Math.Round(promedioDiario, 1);
 
-        var promedioDiario = Math.Max(impresora.PromedioPaginasDiario, 1);
-        var paginasUsadasTonerActual = consumoReciente.Count > 0
-            ? consumoReciente[^1].PaginasImpresas
-            : impresora.ContadorTotalPaginas % RendimientoTonnerPaginas;
-
-        impresora.DiasEstimadosAgotamientoTonner = Math.Max(0,
-            (int)((RendimientoTonnerPaginas - paginasUsadasTonerActual) / promedioDiario));
-
+        var paginasRestantesToner = (impresora.NivelTonnerNegro / 100.0) * RendimientoTonnerPaginas;
+        impresora.DiasEstimadosAgotamientoTonner = (int)Math.Max(1, Math.Round(paginasRestantesToner / promedioDiario));
         impresora.FechaEstimadaAgotamientoTonner = DateTime.UtcNow.AddDays(impresora.DiasEstimadosAgotamientoTonner);
 
-        impresora.AlertaStockCritico = CalcularAlertaStockCritico(impresora);
-
-        var paginasRestantesMantenimiento = Math.Max(
-            IntervaloMantenimientoPaginas - impresora.PaginasDesdeUltimoMantenimiento, 0);
-
-        impresora.DiasEstimadosMantenimiento = (int)(paginasRestantesMantenimiento / promedioDiario);
-
+        var paginasRestantesMantenimiento = Math.Max(0, IntervaloMantenimientoPaginas - impresora.PaginasDesdeUltimoMantenimiento);
+        impresora.DiasEstimadosMantenimiento = paginasRestantesMantenimiento == 0
+            ? 1
+            : (int)Math.Max(1, Math.Round(paginasRestantesMantenimiento / promedioDiario));
         impresora.FechaEstimadaMantenimiento = DateTime.UtcNow.AddDays(impresora.DiasEstimadosMantenimiento);
 
+        impresora.AlertaStockCritico = impresora.NivelTonnerNegro <= 15 || impresora.DiasEstimadosAgotamientoTonner <= 7;
+
         await _repositorio.GuardarCambiosAsync();
-    }
-
-    private static bool CalcularAlertaStockCritico(Impresora impresora)
-    {
-        if (impresora.ConsumibleToner is null)
-        {
-            return false;
-        }
-
-        return impresora.DiasEstimadosAgotamientoTonner <= impresora.ConsumibleToner.DiasAntelacionPedido
-               && impresora.ConsumibleToner.CantidadActual <= impresora.ConsumibleToner.StockMinimo;
-    }
-
-    private static double CalcularPromedioPaginasDiario(
-        Impresora impresora, IReadOnlyList<HistorialConsumo> consumoReciente)
-    {
-        if (consumoReciente.Count > 0)
-        {
-            var diasTranscurridos = Math.Max(
-                (int)(consumoReciente[^1].FechaCambio - consumoReciente[0].FechaCambio).TotalDays, 1);
-
-            return Math.Round(consumoReciente.Sum(h => h.PaginasImpresas) / (double)diasTranscurridos, 2);
-        }
-
-        var diasDesdeInstalacion = Math.Max(
-            (int)(DateTime.UtcNow - impresora.FechaInstalacion).TotalDays, 1);
-
-        return Math.Round(impresora.ContadorTotalPaginas / (double)diasDesdeInstalacion, 2);
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Sgcti.Core.Entities;
 using Sgcti.Infrastructure.Persistence;
 
 namespace Sgcti.Api.Controllers;
@@ -56,12 +57,19 @@ public class AuthController : ControllerBase
 
         if (usuario is null || usuario.PasswordHash != request.Password)
         {
-            return Unauthorized("Usuario o password incorrectos.");
+            return Unauthorized("Usuario o contraseña incorrectos.");
         }
 
         if (!usuario.Activo)
         {
             return Unauthorized("El usuario está inactivo. Contacta al administrador.");
+        }
+
+        if (!EsRolConAccesoAlSistema(usuario.Rol))
+        {
+            return Unauthorized(
+                "Este registro pertenece al directorio de empleados y no tiene acceso al sistema. " +
+                "Solo las cuentas Admin, Ingeniero y Técnico pueden iniciar sesión.");
         }
 
         var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("No se configuró 'Jwt:Key'.");
@@ -71,13 +79,27 @@ public class AuthController : ControllerBase
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
             SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
+        var rolNormalizado = NormalizarRolParaMostrar(usuario.Rol);
+
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, usuario.Username),
-            new Claim(ClaimTypes.Name, usuario.Username),
-            new Claim(ClaimTypes.Role, usuario.Rol),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, usuario.Username),
+            new(ClaimTypes.Name, usuario.Username),
+            new(ClaimTypes.Role, usuario.Rol),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        // Garantiza compatibilidad con todos los endpoints que validan [Authorize(Roles = "Admin,Tecnico")]
+        if (rolNormalizado is "Ingeniero" or "Técnico" &&
+            !string.Equals(usuario.Rol, Usuario.RolTecnico, StringComparison.Ordinal))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, Usuario.RolTecnico));
+        }
+
+        if (rolNormalizado == "Técnico")
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Técnico"));
+        }
 
         var expira = DateTime.UtcNow.AddHours(DuracionHoras);
 
@@ -94,7 +116,35 @@ public class AuthController : ControllerBase
             Token = new JwtSecurityTokenHandler().WriteToken(token),
             Expira = expira,
             NombreCompleto = usuario.NombreCompleto,
-            Rol = usuario.Rol
+            Rol = rolNormalizado
         });
+    }
+
+    private static bool EsRolConAccesoAlSistema(string? rol)
+    {
+        if (string.IsNullOrWhiteSpace(rol)) return false;
+
+        return rol.Trim() is
+            Usuario.RolAdmin or
+            Usuario.RolIngeniero or
+            Usuario.RolTecnico or
+            "Técnico";
+    }
+
+    private static string NormalizarRolParaMostrar(string rol)
+    {
+        var limpio = rol.Trim();
+        if (limpio.Equals("Tecnico", StringComparison.OrdinalIgnoreCase) ||
+            limpio.Equals("Técnico", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Técnico";
+        }
+
+        if (limpio.Equals("Ingeniero", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Ingeniero";
+        }
+
+        return Usuario.RolAdmin;
     }
 }

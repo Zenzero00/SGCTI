@@ -1,0 +1,5 @@
+# Compilación de .NET (recursivo en todas las carpetas)
+[Bb]in/
+[Oo]bj/
+**/bin/
+**/obj/

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Sgcti.Api.Hubs;
 using Sgcti.Core.Dtos;
 using Sgcti.Core.Entities;
 using Sgcti.Infrastructure.Persistence;
@@ -12,9 +14,12 @@ public class SuministrosController : ControllerBase
 {
     private readonly SgctiDbContext _db;
 
-    public SuministrosController(SgctiDbContext db)
+    private readonly IHubContext<NotificacionesHub> _hubContext;
+
+    public SuministrosController(SgctiDbContext db, IHubContext<NotificacionesHub> hubContext)
     {
         _db = db;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -66,6 +71,11 @@ public class SuministrosController : ControllerBase
         _db.Suministros.Add(entidad);
         await _db.SaveChangesAsync(ct);
 
+        if (EsCritico(entidad))
+        {
+            await NotificarStockBajoAsync(entidad, ct);
+        }
+
         return CreatedAtAction(nameof(GetById), new { id = entidad.Id }, ADto(entidad));
     }
 
@@ -79,6 +89,9 @@ public class SuministrosController : ControllerBase
             return NotFound();
         }
 
+        var cantidadAnterior = entidad.CantidadActual;
+        var eraCritico = EsCritico(entidad);
+
         entidad.Nombre = dto.Nombre.Trim();
         entidad.Tipo = dto.Tipo.Trim();
         entidad.CantidadActual = dto.CantidadActual;
@@ -86,6 +99,13 @@ public class SuministrosController : ControllerBase
         entidad.Observacion = dto.Observacion?.Trim();
 
         await _db.SaveChangesAsync(ct);
+
+        var esCritico = EsCritico(entidad);
+
+        if (esCritico && (!eraCritico || entidad.CantidadActual < cantidadAnterior))
+        {
+            await NotificarStockBajoAsync(entidad, ct);
+        }
 
         return NoContent();
     }
@@ -105,6 +125,16 @@ public class SuministrosController : ControllerBase
 
         return NoContent();
     }
+
+    private static bool EsCritico(Suministro s)
+        => s.CantidadActual <= s.StockMinimo || s.CantidadActual < 3;
+
+    private Task NotificarStockBajoAsync(Suministro s, CancellationToken ct)
+        => _hubContext.Clients.All.SendAsync(
+            "RecibirNotificacion",
+            "⚠️ Stock Bajo",
+            $"{s.Nombre} - {s.Tipo} · Quedan {s.CantidadActual} unidades (mínimo {s.StockMinimo}).",
+            ct);
 
     private static SuministroDto ADto(Suministro s) => new()
     {

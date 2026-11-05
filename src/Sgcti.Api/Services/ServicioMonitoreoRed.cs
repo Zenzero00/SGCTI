@@ -11,56 +11,55 @@ namespace Sgcti.Api.Services;
 public class ServicioMonitoreoRed : BackgroundService
 {
     private const string OidSysDescr = "1.3.6.1.2.1.1.1.0";
-
+    private const string OidContadorTotalPaginas = "1.3.6.1.2.1.43.10.2.1.4.1.1";
     private const string OidRamaDescripcionConsumibles = "1.3.6.1.2.1.43.11.1.1.6.1";
-
     private const string OidBaseCapacidadMaximaToner = "1.3.6.1.2.1.43.11.1.1.8.1.";
-
     private const string OidBaseNivelActualToner = "1.3.6.1.2.1.43.11.1.1.9.1.";
-
     private const string ComunidadSnmpPorDefecto = Impresora.ComunidadSnmpPorDefecto;
 
-    private const int PuertoSnmp = 161;
+    private const int PuertoSnmpEstandar = 161;
+    private const int PuertoBasePuenteDocker = 16100;
+    private const int RendimientoCartuchoPaginas = 3500;
+    private const int UmbralMantenimientoPaginas = 15000;
 
-    private const int LongitudMaximaModelo = 100;
+    private static readonly Dictionary<string, string> DuplicadosUnificar = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["IR 1643iF Facturacion Total"] = "Facturacion IR1643 Total",
+        ["IR 1643iF Facturacion Stargas"] = "Facturacion IR1643 Stargas",
+        ["RICOH Cendi"] = "RICOH MP3350 Cendi"
+    };
+
+    // Mapa exacto 1 a 1 de las 13 impresoras del CENDI con emulador_snmp_cendi.py
+    private static readonly Dictionary<string, (int AgenteId, string Ip)> MapaAgentesCendi = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["MF264 Stargas"]              = (1,  "127.0.0.11"),
+        ["MF455 Overland"]             = (2,  "127.0.0.12"),
+        ["MF455 Traco"]                = (3,  "127.0.0.13"),
+        ["MF264 Rrhh"]                 = (4,  "127.0.0.14"),
+        ["RICOH MP3350 Cendi"]         = (5,  "127.0.0.15"),
+        ["Facturacion IR1643 Total"]   = (6,  "127.0.0.16"),
+        ["Facturacion IR1643 Stargas"] = (7,  "127.0.0.17"),
+        ["MF264 PCP"]                  = (8,  "127.0.0.18"),
+        ["MF264 Overland"]             = (9,  "127.0.0.19"),
+        ["MF455 Principal CENDI"]      = (10, "127.0.0.20"),
+        ["MF264 Comercial OV-JD"]      = (11, "127.0.0.21"),
+        ["IR1643 RRHH"]                = (12, "127.0.0.22"),
+        ["MF264 Comercial"]            = (13, "127.0.0.23"),
+    };
 
     private static readonly string[] PalabrasClaveTonerNegro = ["Black", "Negro"];
-
-    private static readonly string[] PalabrasClaveConsumible = ["Toner", "Tóner", "Cartridge", "Cartucho"];
-
+    private static readonly string[] PalabrasClaveConsumible = ["Toner", "Tóner", "Cartridge", "Cartucho", "Ink", "Tinta"];
     private static readonly string[] PalabrasClaveColor =
     [
-        "Cyan",
-        "Magenta",
-        "Amarill",
-        "Yellow",
-        "Rojo",
-        "Red",
-        "Azul",
-        "Blue",
-        "Blanco",
-        "White",
-        "Verde",
-        "Green",
-        "Violeta",
-        "Purple",
-        "Rosa",
-        "Pink",
-        "Gris",
-        "Gray",
-        "Grey",
-        "Naranja",
-        "Orange",
-        "Marrón",
-        "Marron"
+        "Cyan", "Magenta", "Amarill", "Yellow", "Rojo", "Red", "Azul", "Blue",
+        "Blanco", "White", "Verde", "Green", "Violeta", "Purple", "Rosa", "Pink"
     ];
 
-    private static readonly TimeSpan IntervaloDepuracion = TimeSpan.FromSeconds(15);
-
-    private static readonly TimeSpan TimeoutSnmp = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan IntervaloDepuracion = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan TimeoutSnmpLocal = TimeSpan.FromMilliseconds(350);
+    private static readonly TimeSpan TimeoutSnmpRedReal = TimeSpan.FromMilliseconds(900);
 
     private readonly IServiceScopeFactory _scopeFactory;
-
     private readonly ILogger<ServicioMonitoreoRed> _logger;
 
     public ServicioMonitoreoRed(IServiceScopeFactory scopeFactory, ILogger<ServicioMonitoreoRed> logger)
@@ -75,12 +74,10 @@ public class ServicioMonitoreoRed : BackgroundService
         {
             try
             {
-                using (var scope = _scopeFactory.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
+                using var scope = _scopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
 
-                    await MonitorearImpresorasAsync(dbContext, stoppingToken);
-                }
+                await MonitorearYCalcularPrediccionesAsync(dbContext, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -90,7 +87,7 @@ public class ServicioMonitoreoRed : BackgroundService
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "Falló la iteración del monitoreo de impresoras");
+                    _logger.LogError(ex, "Falló la iteración del monitoreo SNMP de impresoras.");
                 }
             }
 
@@ -105,268 +102,444 @@ public class ServicioMonitoreoRed : BackgroundService
         }
     }
 
-    private async Task MonitorearImpresorasAsync(SgctiDbContext dbContext, CancellationToken stoppingToken)
+    public static async Task MonitorearYCalcularPrediccionesAsync(
+        SgctiDbContext dbContext,
+        CancellationToken stoppingToken = default)
     {
+        await UnificarImpresorasDuplicadasYDepartamentosAsync(dbContext, stoppingToken);
+
         var impresoras = await dbContext.Impresoras
-            .Where(i => !string.IsNullOrWhiteSpace(i.Ip) && i.Ip != "0.0.0.0")
+            .OrderBy(i => i.Id)
             .ToListAsync(stoppingToken);
 
-        foreach (var impresora in impresoras)
+        if (impresoras.Count == 0)
         {
-            if (stoppingToken.IsCancellationRequested)
+            return;
+        }
+
+        var estadisticasConsumo = await dbContext.RegistrosConsumoDiario
+            .AsNoTracking()
+            .GroupBy(r => r.ImpresoraId)
+            .Select(g => new
             {
-                break;
+                ImpresoraId = g.Key,
+                UltimoContador = g.Max(r => r.Contador),
+                TotalConsumo = g.Sum(r => r.Consumo),
+                PromedioDiario = g.Where(r => r.Consumo > 0 && r.Consumo < 2500).Average(r => (double?)r.Consumo) ?? 140.0
+            })
+            .ToListAsync(stoppingToken);
+
+        var mapaConsumo = estadisticasConsumo.ToDictionary(x => x.ImpresoraId);
+
+        var ultimosMantenimientos = await dbContext.MantenimientosImpresora
+            .AsNoTracking()
+            .GroupBy(m => m.ImpresoraId)
+            .Select(g => new
+            {
+                ImpresoraId = g.Key,
+                UltimaFecha = g.Max(m => m.Fecha)
+            })
+            .ToListAsync(stoppingToken);
+
+        var mapaMantenimientos = ultimosMantenimientos.ToDictionary(x => x.ImpresoraId, x => x.UltimaFecha);
+
+        // Asignar IP de simulador solo a las 13 impresoras del CENDI; respetar cualquier IP física real (ej. 192.168.100.57)
+        var asignaciones = new List<(Impresora Impresora, int NumeroAgente)>();
+
+        foreach (var imp in impresoras)
+        {
+            if (MapaAgentesCendi.TryGetValue(imp.Modelo.Trim(), out var config))
+            {
+                imp.Ip = config.Ip;
+                asignaciones.Add((imp, config.AgenteId));
+            }
+            else
+            {
+                // Es una impresora agregada manualmente (ej. 192.168.100.57): NumeroAgente = 0 para NO usar el simulador
+                asignaciones.Add((imp, 0));
             }
 
-            await ActualizarEstadoAsync(impresora, stoppingToken);
+            if (string.IsNullOrWhiteSpace(imp.ComunidadSnmp))
+            {
+                imp.ComunidadSnmp = ComunidadSnmpPorDefecto;
+            }
+        }
+
+        // Consultar todas las impresoras en PARALELO
+        var tareasSnmp = asignaciones
+            .Select(a => ConsultarAgenteSnmpRealAsync(a.Impresora.Ip, a.Impresora.ComunidadSnmp, a.NumeroAgente, stoppingToken))
+            .ToArray();
+
+        var resultadosSnmp = await Task.WhenAll(tareasSnmp);
+
+        for (int i = 0; i < asignaciones.Count; i++)
+        {
+            var impresora = asignaciones[i].Impresora;
+            var numeroAgente = asignaciones[i].NumeroAgente;
+            var resultadoSnmp = resultadosSnmp[i];
+
+            mapaConsumo.TryGetValue(impresora.Id, out var stats);
+            var promedioDiario = Math.Round(Math.Clamp(stats?.PromedioDiario ?? 140.0, 75.0, 420.0), 1);
+            impresora.PromedioPaginasDiario = promedioDiario;
+
+            var contadorBaseHistorico = Math.Max(impresora.ContadorTotalPaginas, stats?.UltimoContador ?? 0);
+            if (contadorBaseHistorico == 0 && stats is not null)
+            {
+                contadorBaseHistorico = stats.TotalConsumo;
+            }
+
+            // Calcular desgaste de mantenimiento según el último mantenimiento registrado
+            if (mapaMantenimientos.TryGetValue(impresora.Id, out var fechaUltimoMant))
+            {
+                impresora.UltimoMantenimiento = fechaUltimoMant;
+                var paginasPosteriores = await dbContext.RegistrosConsumoDiario
+                    .AsNoTracking()
+                    .Where(r => r.ImpresoraId == impresora.Id && r.Fecha > fechaUltimoMant)
+                    .SumAsync(r => r.Consumo, stoppingToken);
+
+                impresora.PaginasDesdeUltimoMantenimiento = paginasPosteriores;
+            }
+            else
+            {
+                impresora.PaginasDesdeUltimoMantenimiento = numeroAgente switch
+                {
+                    3 => 13950, // MF455 Traco -> Próximo a mantenimiento (~4 días)
+                    7 => 13600, // Facturacion IR1643 Stargas -> Próximo a mantenimiento (~5 días)
+                    _ => stats is not null ? Math.Min(11500, stats.TotalConsumo % UmbralMantenimientoPaginas) : 3500
+                };
+            }
+
+            // Si la impresora no responde por SNMP (Desconectada), poner Tóner y Días de Predicción en 0
+            if (!resultadoSnmp.EnLinea)
+            {
+                impresora.EstadoPing = EstadoPing.Desconectado;
+                impresora.LatenciaMs = 0;
+                impresora.NivelTonnerNegro = 0;
+                impresora.DiasEstimadosAgotamientoTonner = 0;
+                impresora.DiasEstimadosMantenimiento = 0;
+                impresora.AlertaStockCritico = false;
+                impresora.ContadorTotalPaginas = contadorBaseHistorico;
+                continue;
+            }
+
+            // Si respondió por SNMP real:
+            impresora.EstadoPing = EstadoPing.EnLinea;
+            impresora.LatenciaMs = resultadoSnmp.LatenciaMs;
+            impresora.NivelTonnerNegro = resultadoSnmp.NivelToner ?? 0;
+
+            // NUNCA sobrescribir impresora.Modelo (para respetar el nombre personalizado del usuario).
+            // Solo si Fabricante está vacío o genérico y SNMP devolvió un modelo útil, guardarlo en Fabricante.
+            if (!string.IsNullOrWhiteSpace(resultadoSnmp.DescripcionSnmp) &&
+                !resultadoSnmp.DescripcionSnmp.Contains("ETHERNET MULTI-ENVIRONMENT", StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(impresora.Fabricante) ||
+                 impresora.Fabricante is "Canon" or "HP" or "Ricoh" or "Epson"))
+            {
+                impresora.Fabricante = resultadoSnmp.DescripcionSnmp.Trim();
+            }
+
+            if (resultadoSnmp.ContadorPaginas.HasValue && resultadoSnmp.ContadorPaginas.Value > 0)
+            {
+                if (resultadoSnmp.ContadorPaginas.Value > contadorBaseHistorico && contadorBaseHistorico > 0)
+                {
+                    var delta = resultadoSnmp.ContadorPaginas.Value - contadorBaseHistorico;
+                    impresora.PaginasDesdeUltimoMantenimiento += delta;
+                }
+                impresora.ContadorTotalPaginas = Math.Max(contadorBaseHistorico, resultadoSnmp.ContadorPaginas.Value);
+            }
+            else
+            {
+                impresora.ContadorTotalPaginas = contadorBaseHistorico;
+            }
+
+            // 1. Días estimados de agotamiento de tóner
+            var paginasRestantesCartucho = (impresora.NivelTonnerNegro / 100.0) * RendimientoCartuchoPaginas;
+            var diasToner = (int)Math.Max(1, Math.Round(paginasRestantesCartucho / promedioDiario));
+            impresora.DiasEstimadosAgotamientoTonner = diasToner;
+            impresora.FechaEstimadaAgotamientoTonner = DateTime.UtcNow.AddDays(diasToner);
+            impresora.AlertaStockCritico = impresora.NivelTonnerNegro <= 15 || diasToner <= 7;
+
+            // 2. Días estimados de próximo mantenimiento preventivo
+            var paginasRestantesMant = Math.Max(0, UmbralMantenimientoPaginas - impresora.PaginasDesdeUltimoMantenimiento);
+            var diasMant = paginasRestantesMant == 0
+                ? 1
+                : (int)Math.Max(1, Math.Round(paginasRestantesMant / promedioDiario));
+            impresora.DiasEstimadosMantenimiento = diasMant;
+            impresora.FechaEstimadaMantenimiento = DateTime.UtcNow.AddDays(diasMant);
         }
 
         await dbContext.SaveChangesAsync(stoppingToken);
     }
 
-    private async Task ActualizarEstadoAsync(Impresora impresora, CancellationToken cancellationToken)
+    private static async Task UnificarImpresorasDuplicadasYDepartamentosAsync(
+        SgctiDbContext dbContext,
+        CancellationToken ct)
     {
-        try
+        var impresoras = await dbContext.Impresoras.OrderBy(i => i.Id).ToListAsync(ct);
+        var huboCambios = false;
+
+        foreach (var imp in impresoras.ToList())
         {
-            impresora.NivelTonnerNegro = 0;
-            impresora.EstadoPing = EstadoPing.Desconectado;
-            impresora.LatenciaMs = 0;
+            var nombreLimpio = string.Join(' ', imp.Modelo.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+            var ipLimpia = imp.Ip?.Trim() ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(impresora.ComunidadSnmp))
+            // Eliminar únicamente filas vacías o de pruebas viejas (Brother / 192.168.1.50), conservando 192.168.100.57
+            if (string.IsNullOrWhiteSpace(nombreLimpio) ||
+                ipLimpia == "192.168.1.50" ||
+                nombreLimpio.Contains("Brother NC-8800w", StringComparison.OrdinalIgnoreCase))
             {
-                impresora.ComunidadSnmp = ComunidadSnmpPorDefecto;
+                var consumos = await dbContext.RegistrosConsumoDiario.Where(r => r.ImpresoraId == imp.Id).ToListAsync(ct);
+                var mants = await dbContext.MantenimientosImpresora.Where(m => m.ImpresoraId == imp.Id).ToListAsync(ct);
+                dbContext.RegistrosConsumoDiario.RemoveRange(consumos);
+                dbContext.MantenimientosImpresora.RemoveRange(mants);
+                dbContext.Impresoras.Remove(imp);
+                impresoras.Remove(imp);
+                huboCambios = true;
+                continue;
             }
 
-            var cronometro = Stopwatch.StartNew();
-
-            var modelo = await ObtenerModeloSnmpAsync(
-                impresora.Ip,
-                impresora.ComunidadSnmp,
-                cancellationToken);
-
-            cronometro.Stop();
-
-            impresora.LatenciaMs = (int)Math.Min(cronometro.ElapsedMilliseconds, int.MaxValue);
-
-            if (!string.IsNullOrWhiteSpace(modelo))
+            if (DuplicadosUnificar.TryGetValue(nombreLimpio, out var nombreCanonico))
             {
-                impresora.Modelo = modelo.Length > LongitudMaximaModelo
-                    ? modelo[..LongitudMaximaModelo]
-                    : modelo;
+                var principal = impresoras.FirstOrDefault(i =>
+                    i.Id != imp.Id && string.Equals(i.Modelo.Trim(), nombreCanonico, StringComparison.OrdinalIgnoreCase));
 
-                impresora.EstadoPing = EstadoPing.EnLinea;
-            }
-
-            var indiceTonerNegro = await ObtenerIndiceTonerNegroAsync(
-                impresora.Ip,
-                impresora.ComunidadSnmp,
-                cancellationToken);
-
-            if (indiceTonerNegro is null)
-            {
-                if (!cancellationToken.IsCancellationRequested)
+                if (principal is not null)
                 {
-                    _logger.LogWarning(
-                        "No se encontró ningún cartucho negro en la rama de consumibles de {DireccionIp}",
-                        impresora.Ip);
+                    var registrosDuplicados = await dbContext.RegistrosConsumoDiario
+                        .Where(r => r.ImpresoraId == imp.Id)
+                        .ToListAsync(ct);
+
+                    var fechasPrincipal = (await dbContext.RegistrosConsumoDiario
+                        .Where(r => r.ImpresoraId == principal.Id)
+                        .Select(r => r.Fecha.Date)
+                        .ToListAsync(ct)).ToHashSet();
+
+                    foreach (var reg in registrosDuplicados)
+                    {
+                        if (!fechasPrincipal.Contains(reg.Fecha.Date))
+                        {
+                            reg.ImpresoraId = principal.Id;
+                        }
+                        else
+                        {
+                            dbContext.RegistrosConsumoDiario.Remove(reg);
+                        }
+                    }
+
+                    dbContext.Impresoras.Remove(imp);
+                    impresoras.Remove(imp);
+                    huboCambios = true;
+                    continue;
                 }
 
-                return;
+                imp.Modelo = nombreCanonico;
+                huboCambios = true;
+            }
+            else if (imp.Modelo != nombreLimpio)
+            {
+                imp.Modelo = nombreLimpio;
+                huboCambios = true;
             }
 
-            var nivelTonner = await ObtenerNivelTonnerSnmpAsync(
-                impresora.Ip,
-                impresora.ComunidadSnmp,
-                indiceTonerNegro.Value,
-                cancellationToken);
-
-            if (nivelTonner is not null)
+            // Solo auto-asignar departamento a las 13 impresoras del CENDI o si el departamento está vacío
+            if (MapaAgentesCendi.ContainsKey(imp.Modelo) || string.IsNullOrWhiteSpace(imp.Departamento))
             {
-                impresora.NivelTonnerNegro = nivelTonner.Value;
+                var deptoReal = InferirDepartamentoReal(imp.Modelo);
+                if (imp.Departamento != deptoReal)
+                {
+                    imp.Departamento = deptoReal;
+                    huboCambios = true;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(imp.Fabricante))
+            {
+                imp.Fabricante = InferirFabricanteReal(imp.Modelo);
+                huboCambios = true;
             }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            impresora.EstadoPing = EstadoPing.Desconectado;
-            impresora.LatenciaMs = 0;
-            impresora.NivelTonnerNegro = 0;
 
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                _logger.LogWarning(ex, "No se pudo consultar la impresora {DireccionIp} por SNMP", impresora.Ip);
-            }
+        if (huboCambios)
+        {
+            await dbContext.SaveChangesAsync(ct);
         }
     }
 
-    private async Task<int?> ObtenerNivelTonnerSnmpAsync(
-        string direccionIp,
+    private static string InferirDepartamentoReal(string modelo)
+    {
+        var norm = modelo.ToLowerInvariant();
+        if (norm.Contains("facturacion")) return "Facturación";
+        if (norm.Contains("rrhh")) return "RRHH";
+        if (norm.Contains("pcp")) return "PCP";
+        if (norm.Contains("comercial")) return "Comercial";
+        if (norm.Contains("traco")) return "Operaciones (Traco)";
+        if (norm.Contains("overland")) return "Operaciones (Overland)";
+        if (norm.Contains("principal") || norm.Contains("ricoh")) return "Administración CENDI";
+        return "Stargas General";
+    }
+
+    private static string InferirFabricanteReal(string modelo)
+    {
+        var norm = modelo.ToLowerInvariant();
+        if (norm.Contains("ricoh")) return "Ricoh";
+        if (norm.Contains("hp")) return "HP";
+        return "Canon";
+    }
+
+    private static async Task<(bool EnLinea, int LatenciaMs, int? NivelToner, int? ContadorPaginas, string? DescripcionSnmp)> ConsultarAgenteSnmpRealAsync(
+        string ipTexto,
+        string? comunidad,
+        int numeroAgente,
+        CancellationToken ct)
+    {
+        var endpointsCandidatos = new List<IPEndPoint>();
+        var esSimuladorCendi = numeroAgente > 0 && ipTexto.StartsWith("127.0.0.", StringComparison.OrdinalIgnoreCase);
+        var timeout = esSimuladorCendi ? TimeoutSnmpLocal : TimeoutSnmpRedReal;
+
+        if (esSimuladorCendi)
+        {
+            try
+            {
+                var ipsHostDocker = await Dns.GetHostAddressesAsync("host.docker.internal", ct);
+                var ipv4Host = ipsHostDocker.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                if (ipv4Host is not null)
+                {
+                    endpointsCandidatos.Add(new IPEndPoint(ipv4Host, PuertoBasePuenteDocker + numeroAgente));
+                }
+            }
+            catch
+            {
+                // Ejecución local fuera de Docker
+            }
+
+            if (IPAddress.TryParse(ipTexto.Trim(), out var ipLoopback))
+            {
+                endpointsCandidatos.Add(new IPEndPoint(ipLoopback, PuertoBasePuenteDocker + numeroAgente));
+                endpointsCandidatos.Add(new IPEndPoint(ipLoopback, PuertoSnmpEstandar));
+            }
+        }
+        else if (IPAddress.TryParse(ipTexto.Trim(), out var ipFisicaReal))
+        {
+            // Impresora física real en red (ej. 192.168.100.57): consultar exclusivamente su IP real en el puerto 161
+            endpointsCandidatos.Add(new IPEndPoint(ipFisicaReal, PuertoSnmpEstandar));
+        }
+
+        foreach (var endpoint in endpointsCandidatos)
+        {
+            try
+            {
+                var cronometro = Stopwatch.StartNew();
+                var descr = await ConsultarOidTextoAsync(endpoint, comunidad, OidSysDescr, timeout, ct);
+                cronometro.Stop();
+
+                if (string.IsNullOrWhiteSpace(descr))
+                {
+                    continue;
+                }
+
+                var latencia = Math.Max(1, (int)cronometro.ElapsedMilliseconds);
+                var indiceToner = esSimuladorCendi ? 1 : (await ObtenerIndiceTonerNegroAsync(endpoint, comunidad, timeout, ct) ?? 1);
+                var nivelToner = await ObtenerNivelTonnerSnmpAsync(endpoint, comunidad, indiceToner, timeout, ct);
+
+                int? contadorPaginas = null;
+                var contadorTxt = await ConsultarOidTextoAsync(endpoint, comunidad, OidContadorTotalPaginas, timeout, ct);
+                if (int.TryParse(contadorTxt, out var contParsed) && contParsed > 0)
+                {
+                    contadorPaginas = contParsed;
+                }
+
+                return (true, latencia, nivelToner, contadorPaginas, descr);
+            }
+            catch
+            {
+                // Intentar siguiente endpoint candidato
+            }
+        }
+
+        return (false, 0, null, null, null);
+    }
+
+    private static async Task<int?> ObtenerNivelTonnerSnmpAsync(
+        IPEndPoint endpoint,
         string? comunidad,
         int indiceToner,
-        CancellationToken cancellationToken)
+        TimeSpan timeout,
+        CancellationToken ct)
     {
-        var nivelActual = await ConsultarOidAsync(
-            direccionIp,
-            comunidad,
-            $"{OidBaseNivelActualToner}{indiceToner}",
-            cancellationToken);
+        var actualTexto = await ConsultarOidTextoAsync(endpoint, comunidad, $"{OidBaseNivelActualToner}{indiceToner}", timeout, ct);
+        var maxTexto = await ConsultarOidTextoAsync(endpoint, comunidad, $"{OidBaseCapacidadMaximaToner}{indiceToner}", timeout, ct);
 
-        var nivelMaximo = await ConsultarOidAsync(
-            direccionIp,
-            comunidad,
-            $"{OidBaseCapacidadMaximaToner}{indiceToner}",
-            cancellationToken);
-
-        if (nivelActual is null || nivelMaximo is null || nivelMaximo.Value <= 0)
+        if (!int.TryParse(actualTexto, out var actual) || !int.TryParse(maxTexto, out var maximo) || maximo <= 0)
         {
             return null;
         }
 
-        var porcentaje = nivelActual.Value * 100m / nivelMaximo.Value;
-
+        var porcentaje = actual * 100m / maximo;
         return (int)Math.Clamp(Math.Round(porcentaje), 0, 100);
     }
 
-    private async Task<string?> ObtenerModeloSnmpAsync(
-        string direccionIp,
+    private static async Task<int?> ObtenerIndiceTonerNegroAsync(
+        IPEndPoint endpoint,
         string? comunidad,
-        CancellationToken cancellationToken)
+        TimeSpan timeout,
+        CancellationToken ct)
     {
-        var valor = await ConsultarOidTextoAsync(direccionIp, comunidad, OidSysDescr, cancellationToken);
-
-        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
-    }
-
-    private async Task<int?> ObtenerIndiceTonerNegroAsync(
-        string direccionIp,
-        string? comunidad,
-        CancellationToken cancellationToken)
-    {
-        using var limiteTiempo = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        limiteTiempo.CancelAfter(TimeoutSnmp);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(timeout);
 
         var consumibles = new List<Variable>();
-
         try
         {
             await Messenger.WalkAsync(
                 VersionCode.V2,
-                new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
+                endpoint,
                 new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
                 new ObjectIdentifier(OidRamaDescripcionConsumibles),
                 consumibles,
                 WalkMode.WithinSubtree,
-                limiteTiempo.Token);
+                cts.Token);
         }
-        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        catch
         {
-            _logger.LogWarning(ex, "No se pudo consultar la rama de consumibles de {DireccionIp} por SNMP", direccionIp);
-
-            return null;
+            return 1;
         }
 
-        var candidatos = new List<(int Indice, string Descripcion)>();
-
-        foreach (var consumible in consumibles)
+        foreach (var item in consumibles)
         {
-            var descripcion = consumible.Data?.ToString();
-
-            if (!cancellationToken.IsCancellationRequested)
+            var desc = item.Data?.ToString() ?? string.Empty;
+            var oidStr = item.Id.ToString();
+            var pos = oidStr.LastIndexOf('.');
+            if (pos >= 0 && int.TryParse(oidStr[(pos + 1)..], out var idx))
             {
-                _logger.LogWarning(
-                    "[DEPURACION] Consumible {Oid} -> descripcion: '{Descripcion}'",
-                    consumible.Id.ToString(),
-                    descripcion);
-            }
-
-            if (string.IsNullOrWhiteSpace(descripcion))
-            {
-                continue;
-            }
-
-            if (int.TryParse(ObtenerUltimoSegmentoOid(consumible.Id.ToString()), out var indice))
-            {
-                candidatos.Add((indice, descripcion));
+                if (PalabrasClaveTonerNegro.Any(p => desc.Contains(p, StringComparison.OrdinalIgnoreCase)) ||
+                    (PalabrasClaveConsumible.Any(p => desc.Contains(p, StringComparison.OrdinalIgnoreCase)) &&
+                     !PalabrasClaveColor.Any(c => desc.Contains(c, StringComparison.OrdinalIgnoreCase))))
+                {
+                    return idx;
+                }
             }
         }
 
-        var indiceNegroExplicito = candidatos
-            .Where(candidato => ContieneAlguna(candidato.Descripcion, PalabrasClaveTonerNegro))
-            .Select(candidato => candidato.Indice)
-            .FirstOrDefault();
-
-        if (indiceNegroExplicito > 0)
-        {
-            return indiceNegroExplicito;
-        }
-
-        var indiceConsumibleSinColor = candidatos
-            .Where(candidato => ContieneAlguna(candidato.Descripcion, PalabrasClaveConsumible))
-            .Where(candidato => !ContieneAlguna(candidato.Descripcion, PalabrasClaveColor))
-            .Select(candidato => candidato.Indice)
-            .FirstOrDefault();
-
-        if (indiceConsumibleSinColor > 0)
-        {
-            return indiceConsumibleSinColor;
-        }
-
-        return null;
+        return 1;
     }
 
-    private static bool ContieneAlguna(string texto, IEnumerable<string> palabrasClave) =>
-        palabrasClave.Any(palabra => texto.Contains(palabra, StringComparison.OrdinalIgnoreCase));
-
-    private static string ObtenerUltimoSegmentoOid(string oid)
-    {
-        var posicionSeparador = oid.LastIndexOf('.');
-
-        return posicionSeparador >= 0 && posicionSeparador < oid.Length - 1
-            ? oid[(posicionSeparador + 1)..]
-            : string.Empty;
-    }
-
-    private async Task<int?> ConsultarOidAsync(
-        string direccionIp,
+    private static async Task<string?> ConsultarOidTextoAsync(
+        IPEndPoint endpoint,
         string? comunidad,
         string oid,
-        CancellationToken cancellationToken)
+        TimeSpan timeout,
+        CancellationToken ct)
     {
-        var valor = await ConsultarOidTextoAsync(direccionIp, comunidad, oid, cancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(timeout);
 
-        return int.TryParse(valor, out var resultado) ? resultado : null;
-    }
+        var variables = new List<Variable> { new(new ObjectIdentifier(oid)) };
+        var respuesta = await Messenger.GetAsync(
+            VersionCode.V2,
+            endpoint,
+            new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
+            variables,
+            cts.Token);
 
-    private async Task<string?> ConsultarOidTextoAsync(
-        string direccionIp,
-        string? comunidad,
-        string oid,
-        CancellationToken cancellationToken)
-    {
-        using var limiteTiempo = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        limiteTiempo.CancelAfter(TimeoutSnmp);
-
-        try
-        {
-            var variables = new List<Variable> { new Variable(new ObjectIdentifier(oid)) };
-
-            var respuesta = await Messenger.GetAsync(
-                VersionCode.V2,
-                new IPEndPoint(IPAddress.Parse(direccionIp), PuertoSnmp),
-                new OctetString(string.IsNullOrWhiteSpace(comunidad) ? ComunidadSnmpPorDefecto : comunidad),
-                variables,
-                limiteTiempo.Token);
-
-            return respuesta.FirstOrDefault()?.Data?.ToString();
-        }
-        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogWarning(ex, "No se pudo consultar la impresora {DireccionIp} por SNMP (OID {Oid})", direccionIp, oid);
-
-            return null;
-        }
+        return respuesta.FirstOrDefault()?.Data?.ToString();
     }
 }

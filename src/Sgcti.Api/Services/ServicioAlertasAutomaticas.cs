@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Sgcti.Api.Hubs;
-using Sgcti.Core.Services;
+using Sgcti.Core.Entities;
 using Sgcti.Infrastructure.Persistence;
 
 namespace Sgcti.Api.Services;
@@ -10,7 +10,7 @@ public class ServicioAlertasAutomaticas : BackgroundService
 {
     private const int UmbralDiasAlerta = 14;
 
-    private static readonly TimeSpan IntervaloRevision = TimeSpan.FromHours(24);
+    private static readonly TimeSpan IntervaloRevision = TimeSpan.FromMinutes(5);
 
     private readonly IServiceScopeFactory _scopeFactory;
 
@@ -34,13 +34,12 @@ public class ServicioAlertasAutomaticas : BackgroundService
         {
             try
             {
-                using (var scope = _scopeFactory.CreateScope())
-                {
-                    var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
-                    var servicioPredictivo = scope.ServiceProvider.GetRequiredService<ServicioAnalisisPredictivo>();
+                using var scope = _scopeFactory.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<SgctiDbContext>();
 
-                    await RevisarPrediccionesAsync(dbContext, servicioPredictivo, stoppingToken);
-                }
+                await ServicioMonitoreoRed.MonitorearYCalcularPrediccionesAsync(dbContext, stoppingToken);
+                await RevisarPrediccionesAsync(dbContext, stoppingToken);
+                await RevisarStockBajoAsync(dbContext, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -50,7 +49,7 @@ public class ServicioAlertasAutomaticas : BackgroundService
             {
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogError(ex, "Falló la iteración de alertas predictivas automáticas");
+                    _logger.LogError(ex, "Falló la iteración de alertas predictivas automáticas.");
                 }
             }
 
@@ -65,65 +64,63 @@ public class ServicioAlertasAutomaticas : BackgroundService
         }
     }
 
-    private async Task RevisarPrediccionesAsync(
-        SgctiDbContext dbContext,
-        ServicioAnalisisPredictivo servicioPredictivo,
-        CancellationToken stoppingToken)
+    private async Task RevisarStockBajoAsync(SgctiDbContext dbContext, CancellationToken stoppingToken)
     {
-        var impresoras = await dbContext.Impresoras
+        var suministrosCriticos = await dbContext.Suministros
             .AsNoTracking()
+            .Where(s => s.CantidadActual <= s.StockMinimo || s.CantidadActual < 3)
+            .OrderBy(s => s.Nombre)
             .ToListAsync(stoppingToken);
 
-        foreach (var impresora in impresoras)
+        foreach (var suministro in suministrosCriticos)
         {
             if (stoppingToken.IsCancellationRequested)
             {
                 break;
             }
 
-            try
+            await _hubContext.Clients.All.SendAsync(
+                "RecibirNotificacion",
+                "⚠️ Stock Bajo",
+                $"{suministro.Nombre} - {suministro.Tipo} · Quedan {suministro.CantidadActual} unidades (mínimo {suministro.StockMinimo}).",
+                stoppingToken);
+        }
+    }
+
+    private async Task RevisarPrediccionesAsync(
+        SgctiDbContext dbContext,
+        CancellationToken stoppingToken)
+    {
+        var impresoras = await dbContext.Impresoras
+            .AsNoTracking()
+            .ToListAsync(stoppingToken);
+
+        foreach (var actualizada in impresoras)
+        {
+            if (stoppingToken.IsCancellationRequested)
             {
-                await servicioPredictivo.CalcularPredicciones(impresora.Id);
-
-                var actualizada = await dbContext.Impresoras
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(i => i.Id == impresora.Id, stoppingToken);
-
-                if (actualizada is null)
-                {
-                    continue;
-                }
-
-                if (actualizada.DiasEstimadosAgotamientoTonner >= 0
-                    && actualizada.DiasEstimadosAgotamientoTonner <= UmbralDiasAlerta)
-                {
-                    await _hubContext.Clients.All.SendAsync(
-                        "RecibirNotificacion",
-                        "⚠️ Alerta Predictiva",
-                        $"Tóner crítico en {actualizada.Modelo}: se agotará en aprox. {actualizada.DiasEstimadosAgotamientoTonner} días.",
-                        stoppingToken);
-                }
-
-                if (actualizada.DiasEstimadosMantenimiento >= 0
-                    && actualizada.DiasEstimadosMantenimiento <= UmbralDiasAlerta)
-                {
-                    await _hubContext.Clients.All.SendAsync(
-                        "RecibirNotificacion",
-                        "⚠️ Alerta Predictiva",
-                        $"Mantenimiento próximo en {actualizada.Modelo}: toca en aprox. {actualizada.DiasEstimadosMantenimiento} días.",
-                        stoppingToken);
-                }
+                break;
             }
-            catch (Exception ex)
+
+            if (actualizada.EstadoPing == EstadoPing.EnLinea
+                && actualizada.DiasEstimadosAgotamientoTonner > 0
+                && actualizada.DiasEstimadosAgotamientoTonner <= UmbralDiasAlerta)
             {
-                if (!stoppingToken.IsCancellationRequested)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "No se pudieron evaluar las predicciones de la impresora {Modelo} (Id {Id})",
-                        impresora.Modelo,
-                        impresora.Id);
-                }
+                await _hubContext.Clients.All.SendAsync(
+                    "RecibirNotificacion",
+                    "⚠️ Alerta Predictiva (Tóner)",
+                    $"Tóner crítico ({actualizada.NivelTonnerNegro}%) en {actualizada.Modelo}: se agotará en aprox. {actualizada.DiasEstimadosAgotamientoTonner} días.",
+                    stoppingToken);
+            }
+
+            if (actualizada.DiasEstimadosMantenimiento > 0
+                && actualizada.DiasEstimadosMantenimiento <= UmbralDiasAlerta)
+            {
+                await _hubContext.Clients.All.SendAsync(
+                    "RecibirNotificacion",
+                    "⚠️ Alerta Predictiva (Mantenimiento)",
+                    $"Mantenimiento preventivo próximo en {actualizada.Modelo}: toca en aprox. {actualizada.DiasEstimadosMantenimiento} días.",
+                    stoppingToken);
             }
         }
     }
